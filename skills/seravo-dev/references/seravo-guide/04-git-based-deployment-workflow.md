@@ -13,6 +13,71 @@ git init
 git remote add production ssh://$USER@$SITE.seravo.com:[$PORT]/data/wordpress
 ```
 
+### First Push to Production
+
+Seravo repos default to `master` branch. If your local/GitHub repo uses `main`:
+
+- `git push production main` creates a **new** `main` branch — the site stays on `master`
+- Use `git push production main:master` to push to the active branch
+
+Check production branch before pushing:
+
+```bash
+ssh -4 -p PORT USER@HOST "cd /data/wordpress && git rev-parse --abbrev-ref HEAD"
+```
+
+### Untracked File Conflicts on First Push
+
+Seravo's initial repo may not track the theme or `wp-content` files. When pushing
+a repo that tracks these, `receive.denyCurrentBranch=updateInstead` refuses if
+untracked files on the server conflict with incoming tracked files.
+
+Error: `Untracked working tree file 'X' would be overwritten by merge`
+
+Resolution (the **user** must do this on production, not the agent):
+
+1. SSH to production
+2. `git stash` for modified tracked files
+3. For untracked conflicts: `git add <conflicting files> && git stash`
+4. Exit SSH, then push from local: `ALLOW_PRODUCTION=1 git push production main:master`
+
+### Production Push Safeguard
+
+Recommended: add a pre-push hook that blocks pushes to the `production` remote
+unless explicitly overridden:
+
+```bash
+# scripts/git-hooks/pre-push
+# Checks $REMOTE == "production" and requires ALLOW_PRODUCTION=1 env variable
+```
+
+Install:
+
+```bash
+cd .git/hooks && ln -s ../../scripts/git-hooks/pre-push .
+```
+
+Claude Code deny rules complement this:
+
+```
+"Bash(*push production*)"
+"Bash(*ALLOW_PRODUCTION*)"
+```
+
+These deny rules ensure the agent never pushes to production directly —
+the user must run the push command themselves.
+
+### PHP Version Sync
+
+Seravo may update PHP version on the server independently. The version is set
+in `nginx/php.conf` (e.g., `set $mode php8.4;`). Before first push, check production:
+
+```bash
+ssh -4 -p PORT USER@HOST "cat /data/wordpress/nginx/php.conf"
+```
+
+Update local repo to match — otherwise a push may downgrade PHP on the server.
+
 ### Standard Workflow
 ```bash
 # Make changes locally

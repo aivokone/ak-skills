@@ -1,6 +1,6 @@
 ---
 name: seravo-dev
-description: "Seravo-hosted WordPress ops: custom wp-* CLI, Git-based deploys, DDEV local setup, DB sync, and Seravo-specific troubleshooting."
+description: "Use this skill FIRST for any Seravo-hosted WordPress task. Trigger when the user mentions Seravo, production/shadow, deploy, Git-based deploys, SSH, DDEV, DB sync/import/export, or Seravo custom wp-* commands (wp-backup*, wp-purge-cache, wp-list-env). Start by identifying the environment (production vs shadow vs local) and enforce safety: agents must not run destructive or state-changing commands on production. When production write is needed, provide exact copy-paste commands for the user. Use Seravo-specific CLI and workflows instead of generic WP guidance to avoid wrong commands and risky prod changes."
 ---
 
 # Seravo Developer Guide
@@ -42,8 +42,37 @@ guardrails for agent execution.
 
 - Treat production DB import/export and URL replacement as high risk.
 - Always run or require backup before production-changing tasks.
-- Avoid irreversible commands unless user explicitly requests them.
 - After state changes, include verification and cache purge/flush steps.
+
+### Production Server Safety
+
+Agents must NEVER run destructive commands on the production server via SSH.
+
+Production SSH is **read-only** for agents:
+- **Allowed**: `ls`, `du`, `find`, `cat`, `head`, `tail`, `git log`, `git status`,
+  `wp option get`, `wp post list`, `wp cron event list`, `wp-list-env`,
+  `wp-backup-status`, `wp-backup-list-changes`, `wp-last-ssh-logins`,
+  `wp-last-wp-logins`, `wp-speed-test`
+- **Forbidden**: `mv`, `rm`, `cp`, `git stash`, `git checkout`, `git reset`,
+  `git clean`, `wp plugin activate`, `wp plugin deactivate`, `wp plugin delete`,
+  `wp theme activate`, `wp theme delete`, `wp db import`, `wp db reset`,
+  `wp cron event run`, `wp search-replace`
+
+When a write operation is needed on production, the agent must:
+1. Explain what needs to be done and why
+2. Provide the exact command for the user to copy-paste
+3. Wait for the user to execute it themselves
+
+**Rationale**: the agent cannot guarantee the next step will succeed or that the
+user is present to complete a multi-step sequence. A "temporary" destructive
+action on production (e.g., moving a theme directory to resolve a git conflict)
+can leave the site broken indefinitely.
+
+### Production Push Safety
+
+Never push directly to the `production` remote without explicit user approval.
+See `references/seravo-guide/04-git-based-deployment-workflow.md` for the
+pre-push hook safeguard pattern and Claude Code deny rules.
 
 ## Command Routing
 

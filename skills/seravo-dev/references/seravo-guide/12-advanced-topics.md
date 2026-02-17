@@ -1,5 +1,25 @@
 ## Advanced Topics
 
+### Nginx and .htaccess
+
+Seravo uses Nginx — `.htaccess` files have **no effect**. Many WordPress plugins
+(Gravity Forms, WooCommerce, etc.) rely on `.htaccess` for directory protection,
+but these rules are silently ignored on Seravo.
+
+Always verify plugin upload directories are protected via `nginx/*.conf`:
+
+```nginx
+# /data/wordpress/nginx/upload-protection.conf
+location ~* /uploads/gravity_forms/ { deny all; }
+location ~* /uploads/woocommerce_uploads/ { deny all; }
+```
+
+Custom Nginx rules go in `nginx/*.conf` — Seravo loads them into the server block
+automatically and applies changes on `git push`.
+
+When installing or auditing any plugin that mentions `.htaccess` in its docs,
+check whether it creates directory protection rules and replicate them in Nginx.
+
 ### Custom Nginx Configuration on Seravo
 
 Place files in `/data/wordpress/nginx/*.conf`.
