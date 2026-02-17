@@ -142,6 +142,28 @@ wp-network-status
 
 For multisite operations, many commands need `--url=` or `--network`.
 
+### WP-Cron on Production
+
+`wp cron event run <hook>` modifies state — the agent must **not** run it on
+production. Instead, tell the user what to run and why.
+
+Seravo has system cron that runs `wp-cron.php` regularly, so daily scheduled
+tasks (like Gravity Forms entry retention cleanup) will execute automatically.
+Manual triggering is only needed for immediate execution.
+
+Listing cron events is safe (read-only):
+
+```bash
+wp cron event list
+```
+
+Running a cron event is a write operation (agent must provide command for user):
+
+```bash
+# User runs this on production:
+wp cron event run <hook_name>
+```
+
 ### Internal/Automated Commands (Legacy)
 
 These may be present in old templates and should not be primary local guidance:
