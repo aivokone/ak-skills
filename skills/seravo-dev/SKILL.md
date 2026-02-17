@@ -53,10 +53,10 @@ Production SSH is **read-only** for agents:
   `wp option get`, `wp post list`, `wp cron event list`, `wp-list-env`,
   `wp-backup-status`, `wp-backup-list-changes`, `wp-last-ssh-logins`,
   `wp-last-wp-logins`, `wp-speed-test`
-- **Forbidden**: `mv`, `rm`, `cp`, `git stash`, `git checkout`, `git reset`,
-  `git clean`, `wp plugin activate`, `wp plugin deactivate`, `wp plugin delete`,
-  `wp theme activate`, `wp theme delete`, `wp db import`, `wp db reset`,
-  `wp cron event run`, `wp search-replace`
+- **Forbidden**: `mv`, `rm`, `cp`, `git add`, `git stash`, `git checkout`,
+  `git reset`, `git clean`, `wp plugin activate`, `wp plugin deactivate`,
+  `wp plugin delete`, `wp theme activate`, `wp theme delete`, `wp db import`,
+  `wp db reset`, `wp cron event run`, `wp search-replace`
 
 When a write operation is needed on production, the agent must:
 1. Explain what needs to be done and why
@@ -83,6 +83,8 @@ pre-push hook safeguard pattern and Claude Code deny rules.
 - Local WordPress CLI in Seravo template layout: use `ddev wp ... --path=/var/www/html/htdocs/wordpress`.
 - Seravo cache invalidation on servers: use `wp-purge-cache`.
 - Local cache invalidation in DDEV: use `ddev wp cache flush --path=/var/www/html/htdocs/wordpress`.
+- Production deploy pre-stash: user runs `git add -A && git stash` on server via SSH (agent provides command, never executes).
+- Production push with branch mapping: `git push production main:master` (or configure refspec: `git config remote.production.push main:master`).
 
 Legacy local commands (`wp-development-up`, `wp-pull-production-*`, Docker/Vagrant
 container exec) are deprecated and should not be recommended as primary workflow.

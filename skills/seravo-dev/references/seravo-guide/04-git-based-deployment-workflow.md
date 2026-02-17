@@ -26,6 +26,14 @@ Check production branch before pushing:
 ssh -4 -p PORT USER@HOST "cd /data/wordpress && git rev-parse --abbrev-ref HEAD"
 ```
 
+Configure push refspec once to avoid repeating `main:master`:
+
+```bash
+git config remote.production.push main:master
+```
+
+After this, `git push production` automatically maps `main` to `master`.
+
 ### Untracked File Conflicts on First Push
 
 Seravo's initial repo may not track the theme or `wp-content` files. When pushing
@@ -40,6 +48,41 @@ Resolution (the **user** must do this on production, not the agent):
 2. `git stash` for modified tracked files
 3. For untracked conflicts: `git add <conflicting files> && git stash`
 4. Exit SSH, then push from local: `ALLOW_PRODUCTION=1 git push production main:master`
+
+### Production Push: Stash Workflow
+
+Seravo production almost always has unstaged changes from auto-updates
+(plugins, mu-plugins, WP core). These block `updateInstead` pushes.
+
+Standard workflow before **every** production push:
+
+1. Stash all changes on production (**user** runs manually — agent must not):
+
+```bash
+ssh -4 -p PORT USER@HOST "cd /data/wordpress && git add -A && git stash"
+```
+
+2. Push from local:
+
+```bash
+ALLOW_PRODUCTION=1 git push production main:master
+```
+
+`git add -A` is needed because plugin updates create new untracked files
+(e.g., hashed JS/CSS assets). Plain `git stash` only handles tracked files.
+
+The stash does not need to be restored — the next auto-update cycle will
+regenerate the same files.
+
+If stash is forgotten, the push error is:
+
+```
+! [remote rejected] main -> master (Working directory has unstaged changes)
+```
+
+This is distinct from the "Untracked File Conflicts on First Push" error above,
+which occurs only once when tracked files in the pushed repo collide with
+files that are untracked on the server.
 
 ### Production Push Safeguard
 

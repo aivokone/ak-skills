@@ -372,5 +372,26 @@
       "Mentions that Seravo system cron runs wp-cron.php regularly",
       "Notes that manual triggering is only needed for immediate execution"
     ]
+  },
+  {
+    "name": "Production push blocked by unstaged changes — stash workflow",
+    "prompt": "My git push to Seravo production fails with 'Working directory has unstaged changes'. How do I fix this?",
+    "expectations": [
+      "Explains that production accumulates unstaged changes from auto-updates",
+      "Shows the stash workflow: git add -A && git stash on production",
+      "Explains why git add -A is needed (untracked files from plugin updates)",
+      "States that the user must run the stash command, not the agent",
+      "Mentions the stash does not need to be restored"
+    ]
+  },
+  {
+    "name": "Persistent branch mapping for Seravo production",
+    "prompt": "I'm tired of typing main:master every time I push to Seravo. Is there a shortcut?",
+    "expectations": [
+      "Shows git config remote.production.push main:master",
+      "Explains this makes git push production automatically map main to master",
+      "Notes that Seravo defaults to master while GitHub defaults to main",
+      "Keeps advice focused on the refspec configuration"
+    ]
   }
 ]
