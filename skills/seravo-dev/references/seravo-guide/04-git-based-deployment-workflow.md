@@ -45,9 +45,8 @@ Error: `Untracked working tree file 'X' would be overwritten by merge`
 Resolution (the **user** must do this on production, not the agent):
 
 1. SSH to production
-2. `git stash` for modified tracked files
-3. For untracked conflicts: `git add <conflicting files> && git stash`
-4. Exit SSH, then push from local: `ALLOW_PRODUCTION=1 git push production main:master`
+2. Stash all changes, including untracked files: `git add -A && git stash`
+3. Exit SSH, then push from local: `ALLOW_PRODUCTION=1 git push production main:master`
 
 ### Production Push: Stash Workflow
 
