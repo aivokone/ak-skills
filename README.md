@@ -24,6 +24,7 @@ The table below is the canonical skills index for this repository.
 |------|------|-------------|
 | [Seravo Developer](skills/seravo-dev/) | `seravo-dev` | Seravo-hosted WordPress ops: custom `wp-*` CLI, Git deploys, DDEV local setup, DB sync, troubleshooting |
 | [Google Ads Query](skills/google-ads-query/) | `google-ads-query` | Query Google Ads via GAQL: campaigns, conversions, keywords, ad performance, bidding |
+| [GA4 Query](skills/ga4-query/) | `ga4-query` | Query Google Analytics 4 via the Data API: traffic, sessions, page views, realtime, conversions |
 
 ## Skill Catalog
 
@@ -78,6 +79,32 @@ Install globally:
 
 ```bash
 npx skills add aivokone/ak-skills-ops --skill google-ads-query -g
+```
+
+### GA4 Query (`ga4-query`)
+
+Subcommand-based CLI for querying Google Analytics 4 via the Data API. Supports
+standard reports (dimensions, metrics, filters, date ranges, ordering), realtime
+data, and admin commands (list accounts, property details, custom dimensions and
+metrics). Includes curated dimension and metric references and a `--json`
+passthrough for complex filter logic.
+
+Source:
+- `skills/ga4-query/SKILL.md`
+- `skills/ga4-query/references/dimensions.md`
+- `skills/ga4-query/references/metrics.md`
+- `skills/ga4-query/scripts/query.py`
+
+Install to project scope:
+
+```bash
+npx skills add aivokone/ak-skills-ops --skill ga4-query
+```
+
+Install globally:
+
+```bash
+npx skills add aivokone/ak-skills-ops --skill ga4-query -g
 ```
 
 ## Contributing / Adding Skills

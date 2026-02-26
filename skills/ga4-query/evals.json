@@ -1,0 +1,112 @@
+[
+  {
+    "name": "Sessions and users by date",
+    "prompt": "Show me sessions and active users for the last 7 days",
+    "expectations": [
+      "Uses ga4 alias with the report subcommand",
+      "Includes -d date -m sessions,activeUsers",
+      "Uses --start 7daysAgo --end yesterday"
+    ]
+  },
+  {
+    "name": "Top pages by page views",
+    "prompt": "Which pages got the most views last month?",
+    "expectations": [
+      "Queries pagePath dimension with screenPageViews metric",
+      "Uses --order-by screenPageViews --desc",
+      "Applies a 30-day date range"
+    ]
+  },
+  {
+    "name": "Traffic sources breakdown",
+    "prompt": "Where is our website traffic coming from?",
+    "expectations": [
+      "Queries sessionSource and/or sessionMedium dimensions",
+      "Includes sessions metric",
+      "Uses report subcommand with appropriate date range"
+    ]
+  },
+  {
+    "name": "Filter by country",
+    "prompt": "Show sessions only from Finland",
+    "expectations": [
+      "Uses --filter \"country==Finland\"",
+      "Applies the filter via the report subcommand"
+    ]
+  },
+  {
+    "name": "Multiple filters ANDed",
+    "prompt": "Show sessions from Google organic traffic in Finland",
+    "expectations": [
+      "Uses multiple --filter flags: country==Finland and sessionSource==google and sessionMedium==organic",
+      "Notes that multiple --filter flags are ANDed together"
+    ]
+  },
+  {
+    "name": "Realtime active users",
+    "prompt": "How many users are on the site right now?",
+    "expectations": [
+      "Uses ga4 realtime subcommand",
+      "Queries activeUsers metric",
+      "Notes that realtime covers approximately the last 30 minutes"
+    ]
+  },
+  {
+    "name": "First-time setup guidance",
+    "prompt": "How do I set up the GA4 query tool?",
+    "expectations": [
+      "Instructs to run setup.sh to create the virtual environment",
+      "Explains ga4-config.yaml creation with property_id and credentials_json",
+      "Mentions enabling Google Analytics Data API and Admin API in GCP Console",
+      "Provides test command: ga4 accounts"
+    ]
+  },
+  {
+    "name": "GA4 values are strings",
+    "prompt": "Sum up the sessions from the report output",
+    "expectations": [
+      "Notes that GA4 returns all values as strings, not numbers",
+      "Instructs to parse/convert strings before numeric aggregation"
+    ]
+  },
+  {
+    "name": "Property ID override",
+    "prompt": "Query sessions for property 123456789 instead of the default",
+    "expectations": [
+      "Uses --property 123456789 flag",
+      "Does not require editing the config file"
+    ]
+  },
+  {
+    "name": "List accounts and properties",
+    "prompt": "What GA4 properties do we have access to?",
+    "expectations": [
+      "Uses ga4 accounts subcommand",
+      "Returns list of accounts with their property summaries"
+    ]
+  },
+  {
+    "name": "Complex filter with JSON passthrough",
+    "prompt": "Filter pages that contain /palvelut OR /yhteystiedot",
+    "expectations": [
+      "Notes that OR logic requires --json passthrough since multiple --filter flags are ANDed",
+      "Constructs a JSON body with orGroup filterExpression"
+    ]
+  },
+  {
+    "name": "Date dimension format",
+    "prompt": "The date in the results shows 20240115, what does that mean?",
+    "expectations": [
+      "Explains that GA4 date dimension returns YYYYMMDD format (no dashes)",
+      "Provides the parsed date: 2024-01-15"
+    ]
+  },
+  {
+    "name": "Bounce rate vs engagement rate",
+    "prompt": "Show bounce rate for our top landing pages",
+    "expectations": [
+      "Queries landingPage dimension with bounceRate metric",
+      "Notes that bounceRate = 1 - engagementRate in GA4"
+    ]
+  }
+]
