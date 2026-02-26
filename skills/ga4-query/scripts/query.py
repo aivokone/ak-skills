@@ -22,6 +22,7 @@ from google.analytics.data_v1beta.types import (
     RunRealtimeReportRequest,
     RunReportRequest,
 )
+from google.api_core.exceptions import GoogleAPIError
 from google.oauth2 import service_account
 
 GA4_SCOPE = ["https://www.googleapis.com/auth/analytics.readonly"]
@@ -164,11 +165,15 @@ def parse_single_filter(filter_str):
                 "lt": Filter.NumericFilter.Operation.LESS_THAN,
                 "lte": Filter.NumericFilter.Operation.LESS_THAN_OR_EQUAL,
             }
+            try:
+                num_value = NumericValue(int64_value=int(value))
+            except ValueError:
+                num_value = NumericValue(double_value=float(value))
             return FilterExpression(filter=Filter(
                 field_name=field,
                 numeric_filter=Filter.NumericFilter(
                     operation=num_ops[op],
-                    value=NumericValue(double_value=float(value)),
+                    value=num_value,
                 ),
             ))
 
@@ -253,13 +258,15 @@ def _parse_filter_json(filter_dict):
                 "GREATER_THAN_OR_EQUAL": Filter.NumericFilter.Operation.GREATER_THAN_OR_EQUAL,
             }
             val = nf.get("value", {})
+            if "int64Value" in val:
+                nv = NumericValue(int64_value=val["int64Value"])
+            else:
+                nv = NumericValue(double_value=val.get("doubleValue", 0))
             return FilterExpression(filter=Filter(
                 field_name=field_name,
                 numeric_filter=Filter.NumericFilter(
                     operation=op_map.get(nf.get("operation", "EQUAL"), Filter.NumericFilter.Operation.EQUAL),
-                    value=NumericValue(
-                        int64_value=val.get("int64Value")) if "int64Value" in val else NumericValue(
-                        double_value=val.get("doubleValue", 0)),
+                    value=nv,
                 ),
             ))
     return FilterExpression()
@@ -486,9 +493,12 @@ def main():
 
         json.dump(result, sys.stdout, indent=2, ensure_ascii=False)
         print()
+    except GoogleAPIError as e:
+        json.dump({"error": "GoogleAPIError", "details": str(e)}, sys.stderr, indent=2, ensure_ascii=False)
+        print(file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
-        msg = str(e)
-        json.dump({"error": msg}, sys.stderr, indent=2, ensure_ascii=False)
+        json.dump({"error": str(e)}, sys.stderr, indent=2, ensure_ascii=False)
         print(file=sys.stderr)
         sys.exit(1)
 
