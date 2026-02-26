@@ -1,17 +1,15 @@
-# Aivokone Ops Skills (`ak-skills-ops`)
+# Aivokone Skills (`ak-skills`)
 
-Platform- and tool-specific operational skills using the open [skills standard](https://skills.sh/).
+Agent skills for Claude Code using the open [skills standard](https://skills.sh/).
 
-This repo is for hosting platforms, deployment tools, infrastructure workflows,
-and provider-specific operations.
-
-This is a multi-skill repository: each skill is self-contained under `skills/<skill-name>/`.
+This repo hosts operational tools, documentation workflows, and development practices.
+Each skill is self-contained under `skills/<skill-name>/`.
 
 ## Install (skills.sh / npx skills)
 
 ```bash
 # Install all skills from this repo to current project
-npx skills add aivokone/ak-skills-ops
+npx skills add aivokone/ak-skills
 ```
 
 For full usage and installation details, see [skills.sh docs](https://skills.sh/docs).
@@ -25,6 +23,9 @@ The table below is the canonical skills index for this repository.
 | [Seravo Developer](skills/seravo-dev/) | `seravo-dev` | Seravo-hosted WordPress ops: custom `wp-*` CLI, Git deploys, DDEV local setup, DB sync, troubleshooting |
 | [Google Ads Query](skills/google-ads-query/) | `google-ads-query` | Query Google Ads via GAQL: campaigns, conversions, keywords, ad performance, bidding |
 | [GA4 Query](skills/ga4-query/) | `ga4-query` | Query Google Analytics 4 via the Data API: traffic, sessions, page views, realtime, conversions |
+| [Agent Flight Recorder](skills/agent-flight-recorder/) | `agent-flight-recorder` | Always-on flight recorder for agent runs: logs deviations to per-run files |
+| [Local Reference](skills/local-ref/) | `local-ref` | Cache library docs locally so every session reads from disk instead of re-fetching |
+| [PR Review](skills/pr-review/) | `pr-review` | Systematic PR review workflow — check all feedback channels, respond, and report |
 
 ## Skill Catalog
 
@@ -47,13 +48,13 @@ Source:
 Install to project scope:
 
 ```bash
-npx skills add aivokone/ak-skills-ops --skill seravo-dev
+npx skills add aivokone/ak-skills --skill seravo-dev
 ```
 
 Install globally:
 
 ```bash
-npx skills add aivokone/ak-skills-ops --skill seravo-dev -g
+npx skills add aivokone/ak-skills --skill seravo-dev -g
 ```
 
 ### Google Ads Query (`google-ads-query`)
@@ -72,13 +73,13 @@ Source:
 Install to project scope:
 
 ```bash
-npx skills add aivokone/ak-skills-ops --skill google-ads-query
+npx skills add aivokone/ak-skills --skill google-ads-query
 ```
 
 Install globally:
 
 ```bash
-npx skills add aivokone/ak-skills-ops --skill google-ads-query -g
+npx skills add aivokone/ak-skills --skill google-ads-query -g
 ```
 
 ### GA4 Query (`ga4-query`)
@@ -98,13 +99,126 @@ Source:
 Install to project scope:
 
 ```bash
-npx skills add aivokone/ak-skills-ops --skill ga4-query
+npx skills add aivokone/ak-skills --skill ga4-query
 ```
 
 Install globally:
 
 ```bash
-npx skills add aivokone/ak-skills-ops --skill ga4-query -g
+npx skills add aivokone/ak-skills --skill ga4-query -g
+```
+
+### Agent Flight Recorder (`agent-flight-recorder`)
+
+Recorder-only flight logger for agent runs. Logs only deviations from the
+expected path (detours, retries, setup surprises, missing context, blockers,
+quality rework) to per-run files.
+
+Source:
+- `skills/agent-flight-recorder/SKILL.md`
+
+Run output:
+- `.agents/flight-recorder/flight-YYYY-MM-DD-HHMMSS-TZ.md`
+- File header schema: `flight-recorder/v2.5`
+- Header includes recorder metadata: `recorder_agent` (product name), `recorder_model` (exact model ID), optional `recorder_effort` and `task`
+- Run footer with `entries`, `high_severity`, `outcome` for quick scanning
+- Entries include `at` timestamp (ISO-8601 with timezone) for ordering and duration estimation
+- Default git hygiene: ignore `/.agents/flight-recorder/` in `.gitignore` (opt out only if intentionally versioning logs)
+
+Install to project scope:
+
+```bash
+npx skills add aivokone/ak-skills --skill agent-flight-recorder
+```
+
+Install globally:
+
+```bash
+npx skills add aivokone/ak-skills --skill agent-flight-recorder -g
+```
+
+### Project instruction snippet
+
+If you want to enforce usage in a specific project, add a short note to the
+project's agent instruction file (for example `AGENTS.md`, `CLAUDE.md`, or
+similar).
+
+```md
+### Flight Recorder (`agent-flight-recorder`)
+
+- For long or multi-step tasks, use the `agent-flight-recorder` skill when available.
+- If the skill is unavailable, manually write one run file under `.agents/flight-recorder/`.
+- Log only deviations: retries, detours, missing tools, blocking missing context, assumptions, and quality rework.
+- Do not mention the log mid-task.
+- At task completion, if entries were created, include: `Flight recorder: N entries logged. See <path>.`
+```
+
+### Local Reference (`local-ref`)
+
+Cache library documentation locally so every session reads from disk instead of
+re-fetching from external sources. Supports Context7 API, WebFetch, and manual
+sources. Includes commands for initializing a project doc cache (`local-ref init`),
+looking up docs local-first (`local-ref lookup`), updating cached docs
+(`local-ref update`), and opportunistically saving fetched docs (`local-ref save`).
+
+Docs are written to `docs/reference/<topic>.md` — project-specific, 100-200 lines
+each, with cross-references to actual project files. Each file includes a
+machine-readable header (`<!-- source="..." cached="..." -->`) that enables
+reliable automated updates.
+
+Source:
+- `skills/local-ref/SKILL.md`
+
+Install to project scope:
+
+```bash
+npx skills add aivokone/ak-skills --skill local-ref
+```
+
+Install globally:
+
+```bash
+npx skills add aivokone/ak-skills --skill local-ref -g
+```
+
+### PR Review (`pr-review`)
+
+Systematic PR review workflow for checking, responding to, and reporting on
+feedback from any source — human reviewers, review bots (CodeRabbit, Gemini,
+Codex, Snyk, etc.), or AI agents. Ensures all three feedback channels
+(conversation, inline, reviews) are checked so no feedback is missed.
+
+Includes helper scripts (relative to skill directory):
+
+- `scripts/check-pr-feedback.sh` — check all three feedback channels for a PR
+- `scripts/reply-to-inline.sh` — reply in-thread to inline comments
+
+Source:
+- `skills/pr-review/SKILL.md`
+
+Install to project scope:
+
+```bash
+npx skills add aivokone/ak-skills --skill pr-review
+```
+
+Install globally:
+
+```bash
+npx skills add aivokone/ak-skills --skill pr-review -g
+```
+
+### Project instruction snippet
+
+If you want to enforce usage in a specific project, add a short note to the
+project's agent instruction file (for example `AGENTS.md`, `CLAUDE.md`, or
+similar).
+
+```md
+### PR Review Workflow (`pr-review`)
+
+- When checking PR feedback, reviewing code review comments, or responding to reviews, always use the `pr-review` skill first.
+- This ensures all three feedback channels are checked (conversation, inline, reviews) and no feedback is missed.
 ```
 
 ## Contributing / Adding Skills

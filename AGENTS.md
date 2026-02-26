@@ -4,14 +4,14 @@ This file provides guidance to agents when working with code in this repository.
 
 ## Repository Purpose
 
-This is **ak-skills-ops**: a multi-skill repository for **platform- and tool-specific operational skills**. This collection focuses on hosting platforms, deployment tools, infrastructure workflows, and provider-specific operations. Each skill is self-contained in its own directory under `skills/`.
+This is **ak-skills**: a multi-skill repository for **agent skills** — operational tools, documentation workflows, and development practices. Each skill is self-contained in its own directory under `skills/`.
 
 ## Architecture
 
 ### Repository Structure
 
 ```
-ak-skills-ops/
+ak-skills/
 ├── AGENTS.md                    # Repo-level agent guidance (this file)
 ├── CLAUDE.md                    # Claude-specific overrides (keep minimal)
 ├── README.md                    # Repository index / public landing page

@@ -1,6 +1,6 @@
 {
-  "name": "ak-skills-ops",
+  "name": "ak-skills",
   "version": "1.0.0",
-  "description": "Platform- and tool-specific operational skills for Claude Code",
-  "skills": ["seravo-dev", "google-ads-query", "ga4-query"]
+  "description": "Agent skills for Claude Code — operational tools, documentation workflows, and development practices",
+  "skills": ["seravo-dev", "google-ads-query", "ga4-query", "agent-flight-recorder", "local-ref", "pr-review"]
 }
