@@ -48,6 +48,12 @@ fi
 SSHPASS='YOUR_PASSWORD' sshpass -e ssh-copy-id -o AddressFamily=inet -p 12345 user@example.seravo.com
 ```
 
+> **Agent note**: `sshpass` is a one-time SSH key bootstrap — once `ssh-copy-id` succeeds,
+> key-based auth replaces password auth entirely. Never store passwords in scripts or
+> reuse `SSHPASS` beyond this step. Always ask for user confirmation before running
+> `sudo` commands. The `hudochenkov/sshpass` Homebrew tap is required because
+> `sshpass` was intentionally removed from the main Homebrew repository.
+
 **Multiple developers**:
 - Each developer adds their own public key to `~/.ssh/authorized_keys`
 - Don't share private keys
