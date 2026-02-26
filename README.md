@@ -23,6 +23,7 @@ The table below is the canonical skills index for this repository.
 | Name | Slug | Description |
 |------|------|-------------|
 | [Seravo Developer](skills/seravo-dev/) | `seravo-dev` | Seravo-hosted WordPress ops: custom `wp-*` CLI, Git deploys, DDEV local setup, DB sync, troubleshooting |
+| [Google Ads Query](skills/google-ads-query/) | `google-ads-query` | Query Google Ads via GAQL: campaigns, conversions, keywords, ad performance, bidding |
 
 ## Skill Catalog
 
@@ -52,6 +53,31 @@ Install globally:
 
 ```bash
 npx skills add aivokone/ak-skills-ops --skill seravo-dev -g
+```
+
+### Google Ads Query (`google-ads-query`)
+
+Read-only GAQL query tool for Google Ads accounts. Provides a lightweight Python
+CLI (`gads` alias) that executes Google Ads Query Language queries and returns
+structured JSON. Covers campaign performance, conversion tracking audits, keyword
+analysis, search terms reports, and ad group metrics. Includes enum code reference
+and pre-built query patterns for common reporting tasks.
+
+Source:
+- `skills/google-ads-query/SKILL.md`
+- `skills/google-ads-query/references/enums.md`
+- `skills/google-ads-query/scripts/query.py`
+
+Install to project scope:
+
+```bash
+npx skills add aivokone/ak-skills-ops --skill google-ads-query
+```
+
+Install globally:
+
+```bash
+npx skills add aivokone/ak-skills-ops --skill google-ads-query -g
 ```
 
 ## Contributing / Adding Skills
