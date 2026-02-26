@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "git commit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/check-skills.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
