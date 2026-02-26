@@ -76,6 +76,7 @@ for SLUG in $SLUGS; do
         fail "$SLUG" "evals.json: expected array, got $TYPE"
       else
         BAD=$(jq '[.[] | select(
+          (type != "object") or
           (.name | type) != "string" or
           (.prompt | type) != "string" or
           (.expectations | type) != "array" or
@@ -96,14 +97,16 @@ for SLUG in $SLUGS; do
   fi
 
   if [[ -f "README.md" ]]; then
-    grep -q "$SLUG" README.md \
-      || fail "$SLUG" "Not found in README.md"
+    # Check 11: slug in Skills Index table (| ... | `slug` | ...)
+    sed -n '/^## Skills Index/,/^## /p' README.md | grep -q "$SLUG" \
+      || fail "$SLUG" "Not in README.md Skills Index table"
+    # Check 12: Skill Catalog subsection
     grep -qE "^### .+ \(\`$SLUG\`\)" README.md \
       || fail "$SLUG" "No Skill Catalog subsection (### Name (\`$SLUG\`)) in README.md"
   fi
 
   # --- Secrets scan ---
-  SECRETS_PATTERN='AKIA[0-9A-Z]{16}|sk-[a-zA-Z0-9]{20,}|password[[:space:]]*=[[:space:]]*[^[:space:]]+|secret[[:space:]]*=[[:space:]]*[^[:space:]]+'
+  SECRETS_PATTERN='AKIA[0-9A-Z]{16}|sk-[a-zA-Z0-9]{20,}|password[[:space:]]*=[[:space:]]*[^[:space:]]+|secret[[:space:]]*=[[:space:]]*[^[:space:]]+|token[[:space:]]*=[[:space:]]*[^[:space:]]+'
   if grep -rEi "$SECRETS_PATTERN" "$SKILL_DIR/SKILL.md" "$SKILL_DIR/references/" 2>/dev/null \
      | grep -viE 'YOUR_|example|xxx|placeholder' > /dev/null 2>&1; then
     fail "$SLUG" "Possible secrets detected in SKILL.md or references/"
