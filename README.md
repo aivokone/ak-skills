@@ -1,6 +1,6 @@
 # Aivokone Skills (`ak-skills`)
 
-Agent skills for Claude Code using the open [skills standard](https://skills.sh/).
+Agent skills using the open [skills standard](https://skills.sh/).
 
 This repo hosts operational tools, documentation workflows, and development practices.
 Each skill is self-contained under `skills/<skill-name>/`.
