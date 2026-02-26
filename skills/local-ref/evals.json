@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Initialize local docs for a project",
+    "prompt": "Set up local reference documentation for this project.",
+    "expectations": [
+      "Detects project technologies from package.json, composer.json, AGENTS.md, or similar",
+      "Confirms with user which technologies to cache",
+      "Scans project code to identify which APIs/patterns are actually used before fetching",
+      "Writes docs to docs/reference/<topic>.md with standard header (source, cached date)",
+      "Adds a Local Reference Documentation section to AGENTS.md with verbal references"
+    ]
+  },
+  {
+    "name": "Update existing local docs",
+    "prompt": "Update the local reference docs to the latest versions.",
+    "expectations": [
+      "Reads docs/reference/ to find existing files",
+      "Parses the <!-- source=\"...\" --> header to determine source type and parameters (libraryId/query, url)",
+      "Re-fetches context7 and webfetch sources using parsed parameters",
+      "Skips manual sources (flags for user review if stale)",
+      "Preserves project-specific annotations and cross-references",
+      "Updates the <!-- cached=\"...\" --> date"
+    ]
+  },
+  {
+    "name": "Lookup documentation local-first",
+    "prompt": "I need docs on React hooks. Look it up for me.",
+    "expectations": [
+      "Checks docs/reference/ for existing local file first",
+      "If found locally, reads and quotes relevant sections without external fetch",
+      "If not found, fetches from external source and offers to save locally"
+    ]
+  },
+  {
+    "name": "Save fetched docs opportunistically",
+    "prompt": "I just fetched some Vite docs from Context7. Can we save these for future sessions?",
+    "expectations": [
+      "Writes project-specific version to docs/reference/<topic>.md with standard header",
+      "Does not dump raw API output — tailors to project patterns",
+      "Adds the new file to AGENTS.md Local Reference Documentation section"
+    ]
+  },
+  {
+    "name": "Use Context7 as documentation source",
+    "prompt": "Fetch WordPress ACF documentation using Context7.",
+    "expectations": [
+      "References Context7 API as a documentation source",
+      "Uses either MCP tools (resolve-library-id, query-docs) or curl endpoints",
+      "Knows common library IDs or can search for them"
+    ]
+  }
+]

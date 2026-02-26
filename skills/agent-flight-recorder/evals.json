@@ -1,0 +1,93 @@
+[
+  {
+    "name": "No detours -> no mention",
+    "prompt": "Summarize the following one-sentence text: 'Hello world.'",
+    "expectations": [
+      "Does not mention the flight recorder if there were zero friction entries",
+      "Does not create or reference any log inline mid-task"
+    ]
+  },
+  {
+    "name": "Detour/retry -> one run file and final line",
+    "prompt": "Try to run a command that fails, then use an alternative approach; finish the task.",
+    "expectations": [
+      "Creates a run-specific file under .agents/flight-recorder/flight-YYYY-MM-DD-HHMMSS-TZ.md",
+      "Writes run header with schema flight-recorder/v2.5 and recorder metadata (recorder_agent as product name, recorder_model as exact model ID, optional recorder_effort)",
+      "Logs fenced YAML entries with trigger and severity",
+      "Each entry includes an ISO-8601 timestamp field `at` with timezone",
+      "Run file ends with a footer block (run_ended, entries, high_severity, outcome)",
+      "Mentions at task completion only: 'Flight recorder: N entries logged. See <path>.'"
+    ]
+  },
+  {
+    "name": "Blocking clarification -> missing-context entry",
+    "prompt": "Ask the user one blocking clarifying question before proceeding, then complete the task.",
+    "expectations": [
+      "Logs a 'missing-context' entry only when the question is blocking or initial inputs are missing",
+      "Does not mention the log until the final response"
+    ]
+  },
+  {
+    "name": "Recorder-only content",
+    "prompt": "Encounter one retry and one assumption, then finish.",
+    "expectations": [
+      "Log entries do not include suggested patches or improvement recommendations",
+      "The 'why' field stays short and factual",
+      "Minutes are omitted unless explicitly measured"
+    ]
+  },
+  {
+    "name": "No duplicate incident entries",
+    "prompt": "Hit one setup issue once, resolve it, and finish.",
+    "expectations": [
+      "Creates a single entry for one incident",
+      "Uses repeat_of only if the same issue recurs later as a separate occurrence"
+    ]
+  },
+  {
+    "name": "Strict fenced YAML output",
+    "prompt": "Log one medium-severity setup deviation and finish.",
+    "expectations": [
+      "Outputs each entry as exactly one fenced ```yaml block",
+      "Does not output stray 'yaml' label lines or unfenced YAML fragments",
+      "Does not create a second repeat_of entry for formatting repair of the same incident",
+      "Quotes free-text values containing YAML-significant characters (`: `, `#`, backticks), especially in signal/stuck/workaround fields"
+    ]
+  },
+  {
+    "name": "Gitignore default for recorder output",
+    "prompt": "Set up flight recorder usage in a git repository.",
+    "expectations": [
+      "Instructs that /.agents/flight-recorder/ is ignored by default via .gitignore",
+      "Allows opt-out only when logs are intentionally versioned and policy is documented"
+    ]
+  },
+  {
+    "name": "High severity triggers immediate flush",
+    "prompt": "Set up a Python project with Poetry. The pyproject.toml has a critical syntax error that blocks all progress.",
+    "expectations": [
+      "Flushes the high-severity entry to disk immediately, not deferred to task end",
+      "Entry has severity: high",
+      "Entry uses an appropriate trigger (blocker or detour)"
+    ]
+  },
+  {
+    "name": "Batch flush before blocking question",
+    "prompt": "Set up a Node.js project, encounter a missing config file, accumulate a deviation entry, then ask the user which config preset to use.",
+    "expectations": [
+      "Accumulated entries are flushed to disk before asking the blocking question",
+      "Does not lose buffered entries if context is interrupted",
+      "Logs a missing-context entry for the blocking clarification"
+    ]
+  },
+  {
+    "name": "Run footer written at completion",
+    "prompt": "Encounter two deviations (one medium, one high severity), resolve both, and complete the task.",
+    "expectations": [
+      "Run file ends with a footer block containing run_ended, entries, high_severity, and outcome",
+      "entries count matches the actual number of logged entries",
+      "high_severity count matches the actual number of high-severity entries",
+      "outcome is 'completed' for a normally finished task"
+    ]
+  }
+]

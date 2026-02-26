@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Check all PR feedback channels",
+    "prompt": "I have an open PR with review comments. How do I check all the feedback channels?",
+    "expectations": [
+      "Mentions checking all three channels: conversation comments, inline comments, and reviews",
+      "References the check-pr-feedback.sh script",
+      "Explains that different reviewers may post in different channels"
+    ]
+  },
+  {
+    "name": "Reply to inline comment",
+    "prompt": "A reviewer left an inline comment on my PR. How do I reply to it?",
+    "expectations": [
+      "References the reply-to-inline.sh script with COMMENT_ID and MESSAGE arguments",
+      "Mentions signing the reply with agent identity",
+      "Suggests also including the fix in a Fix Report conversation comment"
+    ]
+  },
+  {
+    "name": "Create a Fix Report",
+    "prompt": "I've addressed the review feedback on my PR. How do I report what I fixed?",
+    "expectations": [
+      "Shows Fix Report format with statuses: FIXED, WONTFIX, DEFERRED, QUESTION",
+      "FIXED includes commit hash and verification",
+      "Mentions posting as ONE conversation comment and tagging all reviewers"
+    ]
+  },
+  {
+    "name": "Handle duplicate feedback from multiple reviewers",
+    "prompt": "Both CodeRabbit and a human reviewer flagged the same issue in my PR. How should I handle this?",
+    "expectations": [
+      "Fix once, report once",
+      "Note all sources in the Fix Report",
+      "Tag all reviewers who provided feedback"
+    ]
+  },
+  {
+    "name": "Agent-reviewer posting format",
+    "prompt": "I'm an agent reviewing a PR. Where and how should I post my review?",
+    "expectations": [
+      "Post ONE top-level conversation comment, not inline comments",
+      "Group findings by severity (Blocking vs Optional)",
+      "Include file:line and symbol anchor with verification commands for blocking items"
+    ]
+  }
+]
