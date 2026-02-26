@@ -1,0 +1,111 @@
+[
+  {
+    "name": "Campaign performance overview",
+    "prompt": "Show me all active campaigns with their clicks and spend",
+    "expectations": [
+      "Uses gads alias to run a GAQL query",
+      "Queries FROM campaign with campaign.status != 'REMOVED' filter",
+      "Selects metrics.clicks and metrics.cost_micros",
+      "Notes that cost_micros must be divided by 1,000,000 for currency"
+    ]
+  },
+  {
+    "name": "Cost micros conversion",
+    "prompt": "What did we spend on Google Ads last month?",
+    "expectations": [
+      "Queries metrics.cost_micros from campaign",
+      "Explicitly converts cost_micros to currency (divide by 1,000,000)",
+      "Uses a date range with segments.date with both >= and <= bounds"
+    ]
+  },
+  {
+    "name": "Conversion tracking audit",
+    "prompt": "Check if our conversion tracking is set up correctly",
+    "expectations": [
+      "Follows the 6-step conversion tracking audit procedure",
+      "Queries conversion_tracking_status from customer",
+      "Queries all conversion_action rows to check status and primary_for_goal",
+      "Queries campaign_conversion_goal and conversion_goal_campaign_config",
+      "Compares metrics.conversions vs metrics.all_conversions"
+    ]
+  },
+  {
+    "name": "Keyword performance",
+    "prompt": "Which keywords are getting the most clicks?",
+    "expectations": [
+      "Queries FROM keyword_view",
+      "Selects ad_group_criterion.keyword.text and ad_group_criterion.keyword.match_type",
+      "Includes metrics.clicks and metrics.impressions",
+      "Filters out removed campaigns"
+    ]
+  },
+  {
+    "name": "Date range metrics",
+    "prompt": "Show campaign performance for January 2025",
+    "expectations": [
+      "Uses segments.date with both >= '2025-01-01' and <= '2025-01-31' bounds",
+      "Queries campaign metrics including impressions, clicks, cost_micros, conversions"
+    ]
+  },
+  {
+    "name": "Customer ID override",
+    "prompt": "Query campaigns for customer account 1234567890",
+    "expectations": [
+      "Uses --customer-id 1234567890 flag in the gads command",
+      "Does not require editing the config file"
+    ]
+  },
+  {
+    "name": "First-time setup guidance",
+    "prompt": "How do I set up the Google Ads query tool?",
+    "expectations": [
+      "Instructs to run setup.sh to create the virtual environment",
+      "Explains google-ads.yaml config file creation with developer_token and customer_id",
+      "Shows both service account and OAuth2 config templates",
+      "Provides test command: gads \"SELECT customer.id FROM customer\""
+    ]
+  },
+  {
+    "name": "Enum interpretation",
+    "prompt": "What does campaign.advertising_channel_type 13 mean?",
+    "expectations": [
+      "Identifies code 13 as PERFORMANCE_MAX from the enum reference",
+      "Notes that the query script returns names not codes, so raw codes only appear in edge cases"
+    ]
+  },
+  {
+    "name": "Search terms report",
+    "prompt": "What search terms triggered our ads this week?",
+    "expectations": [
+      "Queries FROM search_term_view",
+      "Selects search_term_view.search_term with metrics",
+      "Applies a date range filter using segments.date"
+    ]
+  },
+  {
+    "name": "Troubleshooting a failing query",
+    "prompt": "My query with campaign.start_date is failing",
+    "expectations": [
+      "Identifies campaign.start_date as a potentially problematic field",
+      "Advises removing suspected fields one at a time to isolate the issue",
+      "Does not suggest workarounds that bypass the API"
+    ]
+  },
+  {
+    "name": "Manager account query",
+    "prompt": "How do I query a sub-account under my manager account?",
+    "expectations": [
+      "Explains login_customer_id in google-ads.yaml for manager accounts",
+      "Explains --customer-id flag to target the specific sub-account"
+    ]
+  },
+  {
+    "name": "Ad group CPC bids",
+    "prompt": "Show me all ad groups and their CPC bids",
+    "expectations": [
+      "Queries FROM ad_group",
+      "Selects ad_group.cpc_bid_micros",
+      "Notes that bid_micros must be divided by 1,000,000 for currency conversion"
+    ]
+  }
+]

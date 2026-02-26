@@ -6,3 +6,6 @@
 .claude/skills/
 .agent/
 .agents/
+
+# Python virtual environments (created by skills/google-ads-query/scripts/setup.sh)
+**/.venv/
