@@ -1,10 +1,6 @@
 ---
 name: google-ads-query
-description: >
-  Query any Google Ads account via GAQL. Use when the user asks about
-  Google Ads campaigns, conversions, keywords, ad performance, or bidding.
-  Triggered by: Google Ads, campaign, conversion, PPC, CPC, keyword,
-  click, impression, ROAS, CPA.
+description: "Query any Google Ads account via GAQL. Use when the user asks about Google Ads campaigns, conversions, keywords, ad performance, or bidding. Triggered by: Google Ads, campaign, conversion, PPC, CPC, keyword, click, impression, ROAS, CPA."
 ---
 
 # Google Ads Query

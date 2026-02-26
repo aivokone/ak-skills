@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 python3 -m venv "$SCRIPT_DIR/.venv"
 "$SCRIPT_DIR/.venv/bin/pip" install -q 'google-ads>=29.0.0'

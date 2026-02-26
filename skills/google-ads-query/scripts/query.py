@@ -8,6 +8,7 @@ from pathlib import Path
 
 import yaml
 from google.ads.googleads.client import GoogleAdsClient
+from google.ads.googleads.errors import GoogleAdsException
 
 
 # ---------------------------------------------------------------------------
@@ -67,6 +68,10 @@ def load_config(path: Path) -> tuple[GoogleAdsClient, str]:
     """Load GoogleAdsClient and default customer_id from config."""
     with open(path) as f:
         raw = yaml.safe_load(f)
+
+    if not isinstance(raw, dict):
+        print("Error: google-ads.yaml is empty or invalid", file=sys.stderr)
+        sys.exit(1)
 
     customer_id = str(raw.get("customer_id", "")).replace("-", "")
     if not customer_id:
@@ -193,13 +198,12 @@ def main():
         results = execute_query(client, args.query, customer_id)
         json.dump(results, sys.stdout, indent=2, ensure_ascii=False)
         print()  # trailing newline
+    except GoogleAdsException as ex:
+        errors = [e.message for e in ex.failure.errors]
+        print(json.dumps({"error": "GoogleAdsException", "details": errors}, indent=2, ensure_ascii=False), file=sys.stderr)
+        sys.exit(1)
     except Exception as exc:
-        error_msg = str(exc)
-        # Extract the most useful part of gRPC errors
-        if "errors {" in error_msg:
-            print(json.dumps({"error": error_msg}, indent=2, ensure_ascii=False), file=sys.stderr)
-        else:
-            print(json.dumps({"error": error_msg}, ensure_ascii=False), file=sys.stderr)
+        print(json.dumps({"error": str(exc)}, ensure_ascii=False), file=sys.stderr)
         sys.exit(1)
 
 
