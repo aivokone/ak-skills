@@ -35,6 +35,12 @@ If no PR number provided, detects current PR from branch.
 ~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> "Your message"
 ```
 
+Replies in-thread to inline comments. Uses `-F` flag (not `--raw-field`) which properly handles numeric ID conversion in `gh` CLI.
+
+**Must be run from repository root** with an active PR branch.
+
+**Important:** Always sign inline replies with your agent identity (e.g., `—Claude Sonnet 4.5`, `—GPT-4`, `—Custom Agent`) to distinguish agent responses from human responses in the GitHub UI.
+
 ### Post Fix Report
 
 ```bash
@@ -49,12 +55,6 @@ cat <<'EOF' | ~/.claude/skills/pr-review/scripts/post-fix-report.sh
 - [file:L10]: FIXED @ abc123
 EOF
 ```
-
-Replies in-thread to inline comments. Uses `-F` flag (not `--raw-field`) which properly handles numeric ID conversion in `gh` CLI.
-
-**Must be run from repository root** with an active PR branch.
-
-**Important:** Always sign inline replies with your agent identity (e.g., `—Claude Sonnet 4.5`, `—GPT-4`, `—Custom Agent`) to distinguish agent responses from human responses in the GitHub UI.
 
 ## Commit Workflows
 

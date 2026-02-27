@@ -29,7 +29,6 @@ fi
 
 if [ -z "$PR" ]; then
   echo "Error: No PR number provided and couldn't detect current PR from branch" >&2
-  echo "" >&2
   echo "Usage: $0 [PR_NUMBER] [BODY]" >&2
   echo "       echo 'body' | $0 [PR_NUMBER]" >&2
   echo "" >&2
