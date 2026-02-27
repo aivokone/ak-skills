@@ -193,11 +193,12 @@ resolved.
 
 Includes helper scripts (relative to skill directory):
 
+- `scripts/open-branch.sh` — ensure working tree is on a non-main branch (idempotent)
 - `scripts/check-pr-feedback.sh` — check all three feedback channels for a PR
 - `scripts/reply-to-inline.sh` — reply in-thread to inline comments
-- `scripts/post-fix-report.sh` — post Fix Report as a PR conversation comment
-- `scripts/invoke-review-agents.sh` — trigger review agents (Codex, Gemini, CodeRabbit) on a PR
-- `scripts/create-pr.sh` — idempotent PR creation with branch safety
+- `scripts/post-fix-report.sh` — post Fix Report as a PR conversation comment (file-path or stdin)
+- `scripts/invoke-review-agents.sh` — trigger review agents with a single combined comment (`--format-only` for embedding in PR body)
+- `scripts/create-pr.sh` — idempotent PR creation with branch safety (`--invoke` embeds agent triggers, `CREATED:`/`EXISTS:` output)
 - `scripts/commit-and-push.sh` — stage, commit, and push with branch safety
 - `scripts/wait-for-reviews.sh` — poll for new feedback after invoking agents
 - `scripts/check-new-feedback.sh` — differential feedback check (new items only since timestamp)

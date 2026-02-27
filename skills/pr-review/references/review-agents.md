@@ -6,7 +6,7 @@ Known review agents that can be invoked on a PR, their GitHub usernames, and how
 
 | Slug | Name | GitHub user | Trigger type | Comments posted |
 |------|------|-------------|--------------|-----------------|
-| `codex` | Codex | `codex` | `@codex` mention | 1 |
+| `codex` | Codex | `chatgpt-codex-connector` | `@chatgpt-codex-connector` mention | 1 |
 | `gemini` | Gemini Code Assist | `gemini-code-assist` | `@gemini-code-assist` mention | 1 |
 | `coderabbit` | CodeRabbit | `coderabbitai` | `@coderabbitai review` mention | 1 |
 
@@ -35,6 +35,27 @@ Run `invoke-review-agents.sh` when:
 ~/.claude/skills/pr-review/scripts/invoke-review-agents.sh --list
 ```
 
+## Embedding Triggers in PR Body
+
+When `create-pr.sh --invoke` creates a new PR, it calls `invoke-review-agents.sh --format-only` to get the trigger text and appends it to the PR body. This avoids posting a separate trigger comment, which would cause double-invocations when auto-review is enabled on the repository.
+
+The `--format-only` flag outputs the trigger text to stdout without making any API calls or requiring a PR to exist. It respects `--agents` filtering:
+
+```bash
+# All agents — full trigger text
+./invoke-review-agents.sh --format-only
+# Output: @chatgpt-codex-connector @gemini-code-assist please review this PR.
+#         @coderabbitai review
+
+# Specific agents only
+./invoke-review-agents.sh --format-only --agents codex
+# Output: @chatgpt-codex-connector please review this PR.
+```
+
+**Two scenarios:**
+1. **New PR** (`create-pr.sh --invoke`): triggers embedded in PR body → no separate invoke needed
+2. **Existing PR**: run `invoke-review-agents.sh` directly to post a trigger comment
+
 ## Adding a New Agent
 
 To register a new review agent, edit `scripts/invoke-review-agents.sh`:
@@ -42,22 +63,15 @@ To register a new review agent, edit `scripts/invoke-review-agents.sh`:
 1. **Append slug** to the `AGENT_SLUGS` array.
 2. **Append name** to the `AGENT_NAMES` array (same index as slug).
 3. **Append GitHub username** to the `AGENT_USERS` array (same index).
-4. **Add a `case` block** in the `invoke_agent()` function that posts the correct comment(s).
-5. **Update `list_agents()`** — add a matching `case` entry with the trigger description if it differs from the default `@-mention (1 comment)`.
+
+That's it — the script automatically includes new agents in the combined @-mention comment. No case blocks needed.
 
 Example — adding a hypothetical `snyk` agent:
 
 ```bash
-# 1. Arrays (add at end, matching indices)
 AGENT_SLUGS=(codex gemini coderabbit snyk)
 AGENT_NAMES=("Codex" "Gemini Code Assist" "CodeRabbit" "Snyk")
-AGENT_USERS=(codex gemini-code-assist coderabbitai snyk-io)
-
-# 2. Case block in invoke_agent()
-snyk)
-  echo "  → Invoking Snyk (@snyk-io)..."
-  gh pr comment "$pr" --repo "$repo" --body "@snyk-io please review this PR."
-  ;;
+AGENT_USERS=(chatgpt-codex-connector gemini-code-assist coderabbitai snyk-io)
 ```
 
 ## Prompt Injection Warning

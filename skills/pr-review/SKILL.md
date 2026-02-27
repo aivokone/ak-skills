@@ -19,6 +19,14 @@ Systematic workflow for checking, responding to, and reporting on PR feedback fr
 
 Use whichever path exists. Script paths below use the global form; substitute accordingly for your agent or install method.
 
+### Open Branch (Idempotent)
+
+```bash
+~/.claude/skills/pr-review/scripts/open-branch.sh [BRANCH_NAME]
+```
+
+If already on a non-main/master branch, prints branch name and exits. If on main/master, creates branch, switches, and pushes with `-u`. Default name: `review-loop-YYYYMMDD-HHMMSS`.
+
 ### Check All Feedback (CRITICAL - Use First)
 
 ```bash
@@ -44,39 +52,43 @@ Replies in-thread to inline comments. Uses `-F` flag (not `--raw-field`) which p
 ### Invoke Review Agents
 
 ```bash
-~/.claude/skills/pr-review/scripts/invoke-review-agents.sh [--agents SLUG,...] [PR_NUMBER]
+~/.claude/skills/pr-review/scripts/invoke-review-agents.sh [--agents SLUG,...] [--format-only] [PR_NUMBER]
 ```
 
-Posts trigger comments to start agent reviews. Without `--agents`, invokes all known agents (Codex, Gemini, CodeRabbit). Use `--list` to see available agents.
+Posts trigger comments to start agent reviews. Without `--agents`, invokes all known agents (Codex, Gemini, CodeRabbit). Use `--list` to see available agents. Use `--format-only` to print trigger text to stdout without posting (for embedding in PR body).
 
 ### Post Fix Report
 
 ```bash
-~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER] "BODY"
+~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER] /tmp/fix-report.md
 ```
 
-Or via stdin for multi-line content:
+Or via stdin:
 
 ```bash
-cat <<'EOF' | ~/.claude/skills/pr-review/scripts/post-fix-report.sh
-### Fix Report
-- [file:L10]: FIXED @ abc123
-EOF
+echo "$body" | ~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER]
 ```
 
 ### Create PR (Idempotent)
 
 ```bash
-~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body "Description"
+~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body /tmp/pr-body.md [--invoke]
 ```
 
-Or body via stdin:
+Or body as text string or via stdin:
 
 ```bash
+~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body "Short description"
 echo "Description" | ~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title"
 ```
 
-Idempotent: if a PR already exists for the current branch, outputs its info. Refuses to run on `main`/`master`. Pushes branch to remote if not yet pushed.
+`--body` auto-detects: if the value is a readable file, reads from it; otherwise treats as text. Idempotent: if a PR already exists, outputs its info. Refuses to run on `main`/`master`. Pushes branch if not yet pushed.
+
+`--invoke` appends review agent trigger text to the PR body (via `invoke-review-agents.sh --format-only`), avoiding a separate trigger comment that causes double-invocations when auto-review is enabled.
+
+Output prefixes (machine-parseable):
+- `EXISTS: <url>` — PR already existed for this branch
+- `CREATED: <url>` — new PR was created
 
 ### Commit and Push
 
@@ -241,6 +253,8 @@ Run `invoke-review-agents.sh` when `check-pr-feedback.sh` returns empty output f
 
 **Agent selection from prompt:** If the user's prompt names specific agents (e.g., "have Codex review this"), use `--agents` with the matching slug(s). Otherwise invoke all.
 
+**Embedding in PR body:** When creating a new PR with `create-pr.sh --invoke`, trigger text is appended to the PR body automatically (via `--format-only`). This avoids a separate trigger comment that would cause double-invocations when auto-review is enabled. Only use `invoke-review-agents.sh` directly when the PR already exists.
+
 **After invoking:** Inform the user that trigger comments were posted and suggest running `check-pr-feedback.sh` again once agents have had time to respond (typically a few minutes).
 
 **See `references/review-agents.md` for the full agent registry and instructions for adding new agents.**
@@ -319,34 +333,40 @@ After Fix Report:
 
 Activate when the user's prompt requests a review loop, review cycle, or similar — in any words — meaning: run the full review-fix-review cycle autonomously until no new feedback remains.
 
+**Default max rounds: 5.** Override with user instruction if needed.
+
 **Loop workflow:**
 
-0. **PR** — `create-pr.sh --title "..." --body "..."` (idempotent — skips if PR exists)
-1. **Timestamp** — capture `ROUND_START=$(date -u +%Y-%m-%dT%H:%M:%SZ)`
-2. **Invoke** — `invoke-review-agents.sh` (or `--agents` if specified)
-3. **Wait** — `wait-for-reviews.sh --since $ROUND_START` (polls until new feedback or timeout)
-4. **Check** — `check-new-feedback.sh --since $ROUND_START` (shows only new items)
-5. **Fix** — address all new feedback (critically evaluate each item first)
-6. **Commit** — `commit-and-push.sh -m "fix: address review feedback round N"`
-7. **Reply inline** — `reply-to-inline.sh` for each inline comment; sign with agent identity; tag the reviewer's `@github-user`
-8. **Fix Report** — `post-fix-report.sh` with re-invocation footer
-9. **Re-invoke** — go to step 1
+0. **Branch** — `open-branch.sh` (idempotent — creates branch if on main/master)
+1. **PR** — `create-pr.sh --invoke --title "..." --body /tmp/pr-body.md` — capture output prefix (`CREATED:` / `EXISTS:`)
+2. **Timestamp** — capture `ROUND_START=$(date -u +%Y-%m-%dT%H:%M:%SZ); ROUND=$((ROUND+1))`
+3. **Invoke** — Round 1: if step 1 output `CREATED:`, skip (triggers in PR body). If `EXISTS:`, run `invoke-review-agents.sh`. Rounds 2+: agents triggered by @-mentions in previous Fix Report footer (no separate invoke step)
+4. **Wait** — `wait-for-reviews.sh --since $ROUND_START` (polls until new feedback or timeout)
+5. **Check** — `check-new-feedback.sh --since $ROUND_START` (shows only new items)
+6. **Fix** — address all new feedback (critically evaluate each item first)
+7. **Commit** — `commit-and-push.sh -m "fix: address review feedback round N"`
+8. **Reply inline** — `reply-to-inline.sh` for each inline comment; sign with agent identity; tag the reviewer's `@github-user`
+9. **Fix Report** — `post-fix-report.sh $PR /tmp/fix-report.md`
+   - Before max: footer has @-mentions + `@coderabbitai review` on its own line
+   - At max: footer has max-reached message (see below)
+10. **Loop** — if `ROUND < MAX_ROUNDS`, go to step 2
 
-**Termination conditions:**
+**Termination conditions** (any):
 - `check-new-feedback.sh` summary reports 0 new items across all channels
 - `wait-for-reviews.sh` times out (no new feedback after invocation)
 - A reviewer posts an Approve review
 - User explicitly stops the loop
+- Max rounds reached
+
+**Final round Fix Report footer:**
+
+```markdown
+Max review rounds (N) reached. Remaining items addressed above. Manual re-review recommended.
+```
 
 **Inline reply tagging:** When replying to a bot/agent inline comment, include the reviewer's GitHub username in the reply (e.g., `—Claude Sonnet 4.6 | addressed @gemini-code-assist feedback`).
 
-**Fix Report footer for loop rounds:**
-
-```markdown
-Re-invoking review agents for next round.
-```
-
-**See `references/fix-report-examples.md` Example 7 for a complete loop-mode Fix Report.**
+**See `references/fix-report-examples.md` Examples 7–8 for loop-mode Fix Reports.**
 
 ## Multi-Reviewer Patterns
 

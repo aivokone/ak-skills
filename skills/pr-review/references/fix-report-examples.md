@@ -103,7 +103,7 @@ Real-world examples of Fix Reports from code review scenarios with multiple revi
 
 ## Example 7: Loop Mode Fix Report
 
-Shows the re-invocation footer and inline-reply @-tagging used in loop mode.
+Shows the @-mention footer used in loop mode to trigger re-review from all agents.
 
 ```markdown
 ### Fix Report — Round 2
@@ -118,11 +118,32 @@ Shows the re-invocation footer and inline-reply @-tagging used in loop mode.
 **Note:** Replied to inline threads:
 - L20: https://github.com/org/repo/pull/5#discussion_r234567890
 
-Re-invoking review agents for next round.
+@chatgpt-codex-connector @gemini-code-assist please re-review.
+@coderabbitai review
 ```
 
 *(In loop mode, inline replies are signed with agent identity and @-tag the reviewer:*
 *`Fixed @ f1a2b3c. —Claude Sonnet 4.6 | addressed @gemini-code-assist feedback`)*
+
+## Example 8: Max Rounds Reached (Final Loop Round)
+
+Shows the footer used when the loop hits the maximum round limit.
+
+```markdown
+### Fix Report — Round 5 (Final)
+
+**Addressed Gemini inline comments:**
+- utils.ts:L30 (null check): FIXED @ a1b2c3d — verified: `npm test` passes
+  - Inline reply posted, tagged @gemini-code-assist
+
+**Addressed CodeRabbit conversation comment:**
+- utils.ts:L80 (error message): FIXED @ a1b2c3d — verified: error string updated
+
+**Note:** Replied to inline threads:
+- L30: https://github.com/org/repo/pull/7#discussion_r345678901
+
+Max review rounds (5) reached. Remaining items addressed above. Manual re-review recommended.
+```
 
 ## Status Reference
 
