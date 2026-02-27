@@ -87,6 +87,7 @@ pre-push hook safeguard pattern and Claude Code deny rules.
 - Local cache invalidation in DDEV: use `ddev wp cache flush --path=/var/www/html/htdocs/wordpress`.
 - Production deploy pre-stash: user runs `git add -A && git stash` on server via SSH (agent provides command, never executes).
 - Production push with branch mapping: `git push production main:master` (or configure refspec: `git config remote.production.push main:master`).
+- Staging deploy: use `git push staging main:master` (same stash workflow as production if rejected).
 
 Legacy local commands (`wp-development-up`, `wp-pull-production-*`, Docker/Vagrant
 container exec) are deprecated and should not be recommended as primary workflow.
