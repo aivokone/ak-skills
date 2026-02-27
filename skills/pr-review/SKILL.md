@@ -273,13 +273,13 @@ After Fix Report:
 
 ## Loop Mode
 
-Activate when the user's prompt contains "loop", "looppaus", or similar — meaning: run the full review-fix-review cycle autonomously until no new feedback remains.
+Activate when the user's prompt requests a review loop, review cycle, or similar — in any words — meaning: run the full review-fix-review cycle autonomously until no new feedback remains.
 
 **Loop workflow:**
 
 1. **Invoke** — `invoke-review-agents.sh` (or `--agents` if specified)
 2. **Wait** — inform the user; do not re-check immediately
-3. **Check** — `check-pr-feedback.sh`; if empty, loop terminates
+3. **Check** — `check-pr-feedback.sh`; if all three sections show `None`, loop terminates
 4. **Fix** — address all feedback (critically evaluate each item first)
 5. **Reply inline** — for each inline comment, sign with agent identity; tag the reviewer's `@github-user`
 6. **Fix Report** — post ONE Fix Report; footer: `"Re-invoking review agents for next round."`
@@ -287,7 +287,7 @@ Activate when the user's prompt contains "loop", "looppaus", or similar — mean
 8. **Repeat** from step 3
 
 **Termination conditions:**
-- All three channels empty after invocation (no new feedback)
+- All three channels show `None` after invocation (no new feedback)
 - A reviewer posts an Approve review
 - User explicitly stops the loop
 

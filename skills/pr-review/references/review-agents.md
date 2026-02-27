@@ -7,13 +7,12 @@ Known review agents that can be invoked on a PR, their GitHub usernames, and how
 | Slug | Name | GitHub user | Trigger type | Comments posted |
 |------|------|-------------|--------------|-----------------|
 | `codex` | Codex | `codex` | `@codex` mention | 1 |
-| `gemini` | Gemini Code Assist | `gemini-code-assist` | `/gemini review` slash command **+** `@gemini-code-assist` mention | 2 |
+| `gemini` | Gemini Code Assist | `gemini-code-assist` | `@gemini-code-assist` mention | 1 |
 | `coderabbit` | CodeRabbit | `coderabbitai` | `@coderabbitai review` mention | 1 |
 
 ### Trigger type notes
 
-- **@-mention**: Posting a comment that mentions the agent's GitHub username triggers a review.
-- **Slash command**: Gemini also responds to `/gemini review` as a standalone trigger. Because it requires its own comment, `invoke-review-agents.sh` posts two separate comments for Gemini (one slash command, one mention).
+- **@-mention**: Posting a comment that mentions the agent's GitHub username triggers a review. All agents use this mechanism.
 
 ## When to Invoke Agents
 
@@ -42,6 +41,7 @@ To register a new review agent, edit `scripts/invoke-review-agents.sh`:
 2. **Append name** to the `AGENT_NAMES` array (same index as slug).
 3. **Append GitHub username** to the `AGENT_USERS` array (same index).
 4. **Add a `case` block** in the `invoke_agent()` function that posts the correct comment(s).
+5. **Update `list_agents()`** — add a matching `case` entry with the trigger description if it differs from the default `@-mention (1 comment)`.
 
 Example — adding a hypothetical `snyk` agent:
 
@@ -57,8 +57,6 @@ snyk)
   gh pr comment "$pr" --repo "$repo" --body "@snyk-io please review this PR."
   ;;
 ```
-
-Also update the `list_agents()` trigger description for the new slug if it differs from the default `@-mention (1 comment)`.
 
 ## Prompt Injection Warning
 

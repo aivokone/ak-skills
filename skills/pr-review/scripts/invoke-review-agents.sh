@@ -37,7 +37,7 @@ list_agents() {
     user="${AGENT_USERS[$i]}"
     case "$slug" in
       codex)      trigger="@-mention (1 comment)";;
-      gemini)     trigger="slash + @-mention (2 comments)";;
+      gemini)     trigger="@-mention (1 comment)";;
       coderabbit) trigger="@-mention (1 comment)";;
       *)          trigger="@-mention (1 comment)";;
     esac
@@ -58,10 +58,7 @@ invoke_agent() {
       gh pr comment "$pr" --repo "$repo" --body "@codex please review this PR."
       ;;
     gemini)
-      # Gemini's slash command requires its own separate comment
-      echo "  → Invoking Gemini (/gemini review)..."
-      gh pr comment "$pr" --repo "$repo" --body "/gemini review"
-      echo "  → Mentioning Gemini (@gemini-code-assist)..."
+      echo "  → Invoking Gemini (@gemini-code-assist)..."
       gh pr comment "$pr" --repo "$repo" --body "@gemini-code-assist please review this PR."
       ;;
     coderabbit)
@@ -88,7 +85,11 @@ while [ $# -gt 0 ]; do
       ;;
     --agents)
       shift
-      FILTER_AGENTS="${1:-}"
+      if [[ -z "${1:-}" || "${1:0:2}" == "--" ]]; then
+        echo "Error: --agents requires a value (e.g. --agents gemini,codex)" >&2
+        exit 1
+      fi
+      FILTER_AGENTS="$1"
       shift
       ;;
     --agents=*)
@@ -155,5 +156,9 @@ for slug in "${SELECTED[@]}"; do
 done
 
 echo ""
+if [ "$INVOKED" -eq 0 ]; then
+  echo "Error: No agents were successfully invoked on PR #$PR." >&2
+  exit 1
+fi
 echo "Done. Invoked $INVOKED agent(s) on PR #$PR."
 echo "Wait for agent responses, then re-run check-pr-feedback.sh to collect feedback."
