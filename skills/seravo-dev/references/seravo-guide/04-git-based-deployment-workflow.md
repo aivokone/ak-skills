@@ -83,6 +83,46 @@ This is distinct from the "Untracked File Conflicts on First Push" error above,
 which occurs only once when tracked files in the pushed repo collide with
 files that are untracked on the server.
 
+### Staging Push
+
+Seravo staging (shadow) typically uses the `master` branch — same as production.
+Check first:
+
+```bash
+git remote show staging | grep "HEAD branch"
+```
+
+If HEAD is `master`, use branch mapping:
+
+```bash
+git push staging main:master
+```
+
+Configure once so plain `git push staging` works afterwards:
+
+```bash
+git config remote.staging.push main:master
+```
+
+#### Stash Workflow on Staging
+
+Staging may also have unstaged changes (plugin auto-updates, etc.). If the push
+is rejected with `Working directory has unstaged changes`:
+
+1. Stash on staging (**user** runs manually — agent must not):
+
+```bash
+ssh -4 -p STAGING_PORT USER@HOST "cd /data/wordpress && git add -A && git stash"
+```
+
+2. Then push again:
+
+```bash
+git push staging main:master
+```
+
+The stash does not need to be restored — same rationale as production.
+
 ### Production Push Safeguard
 
 Recommended: add a pre-push hook that blocks pushes to the `production` remote
