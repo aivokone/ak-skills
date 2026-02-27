@@ -9,6 +9,12 @@ description: "Query Google Analytics 4 via the Data API. Use when the user asks 
 
 Check prerequisites before querying:
 
+**Script path resolution:** Before running any script, determine the correct base path. Check in this order:
+1. `.claude/skills/ga4-query/scripts/` — project-local install (run from repository root)
+2. `~/.claude/skills/ga4-query/scripts/` — global install
+
+Use whichever path exists. All script paths below use the project-local form; substitute the global path if that's where scripts are found.
+
 1. **Virtual environment**: `.claude/skills/ga4-query/scripts/.venv/` must exist
 2. **Config file**: `ga4-config.yaml` must be findable (see Config section)
 3. **APIs enabled** in GCP project: Google Analytics Data API + Google Analytics Admin API

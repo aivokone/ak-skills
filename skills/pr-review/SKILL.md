@@ -13,7 +13,11 @@ Systematic workflow for checking, responding to, and reporting on PR feedback fr
 
 ## Quick Commands
 
-**Note:** Run scripts from repository root. Paths below assume installation via `npx skills add`. If the skill is installed elsewhere, adjust the `.claude/skills/pr-review/` prefix accordingly.
+**Script path resolution:** Before running any script, determine the correct base path. Check in this order:
+1. `.claude/skills/pr-review/scripts/` — project-local install (run from repository root)
+2. `~/.claude/skills/pr-review/scripts/` — global install
+
+Use whichever path exists. All script paths below use the project-local form; substitute the global path if that's where scripts are found.
 
 ### Check All Feedback (CRITICAL - Use First)
 
