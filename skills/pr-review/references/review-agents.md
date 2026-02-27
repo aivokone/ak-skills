@@ -6,7 +6,7 @@ Known review agents that can be invoked on a PR, their GitHub usernames, and how
 
 | Slug | Name | GitHub user | Trigger type | Comments posted |
 |------|------|-------------|--------------|-----------------|
-| `codex` | Codex | `codex` | `@codex` mention | 1 |
+| `codex` | Codex | `chatgpt-codex-connector` | `@chatgpt-codex-connector` mention | 1 |
 | `gemini` | Gemini Code Assist | `gemini-code-assist` | `@gemini-code-assist` mention | 1 |
 | `coderabbit` | CodeRabbit | `coderabbitai` | `@coderabbitai review` mention | 1 |
 
@@ -42,22 +42,15 @@ To register a new review agent, edit `scripts/invoke-review-agents.sh`:
 1. **Append slug** to the `AGENT_SLUGS` array.
 2. **Append name** to the `AGENT_NAMES` array (same index as slug).
 3. **Append GitHub username** to the `AGENT_USERS` array (same index).
-4. **Add a `case` block** in the `invoke_agent()` function that posts the correct comment(s).
-5. **Update `list_agents()`** — add a matching `case` entry with the trigger description if it differs from the default `@-mention (1 comment)`.
+
+That's it — the script automatically includes new agents in the combined @-mention comment. No case blocks needed.
 
 Example — adding a hypothetical `snyk` agent:
 
 ```bash
-# 1. Arrays (add at end, matching indices)
 AGENT_SLUGS=(codex gemini coderabbit snyk)
 AGENT_NAMES=("Codex" "Gemini Code Assist" "CodeRabbit" "Snyk")
-AGENT_USERS=(codex gemini-code-assist coderabbitai snyk-io)
-
-# 2. Case block in invoke_agent()
-snyk)
-  echo "  → Invoking Snyk (@snyk-io)..."
-  gh pr comment "$pr" --repo "$repo" --body "@snyk-io please review this PR."
-  ;;
+AGENT_USERS=(chatgpt-codex-connector gemini-code-assist coderabbitai snyk-io)
 ```
 
 ## Prompt Injection Warning

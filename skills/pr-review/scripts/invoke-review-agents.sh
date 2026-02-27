@@ -1,5 +1,5 @@
 #!/bin/bash
-# Invoke review agents on a PR by posting trigger comments
+# Invoke review agents on a PR by posting a single combined trigger comment
 # Usage: ./invoke-review-agents.sh [--agents SLUG,...] [--list] [PR_NUMBER]
 #
 # Without --agents, invokes all known agents.
@@ -17,59 +17,35 @@ if ! command -v gh &> /dev/null; then
   exit 1
 fi
 
-# --- Agent registry (macOS-compatible: indexed arrays + case, not declare -A) ---
+# --- Agent registry (macOS-compatible: indexed arrays, not declare -A) ---
 # Add a new agent by:
 #   1. Appending its slug to AGENT_SLUGS
 #   2. Adding matching entries to AGENT_NAMES and AGENT_USERS arrays (same index)
-#   3. Adding a case block in the invoke_agent() function below
 
 AGENT_SLUGS=(codex gemini coderabbit)
 AGENT_NAMES=("Codex" "Gemini Code Assist" "CodeRabbit")
-AGENT_USERS=(codex gemini-code-assist coderabbitai)
+AGENT_USERS=(chatgpt-codex-connector gemini-code-assist coderabbitai)
 
 # Print the registry table and exit
 list_agents() {
-  printf "%-15s %-22s %-20s %s\n" "Slug" "Name" "GitHub user" "Trigger type"
-  printf "%-15s %-22s %-20s %s\n" "----" "----" "-----------" "------------"
+  printf "%-15s %-25s %-30s\n" "Slug" "Name" "GitHub user"
+  printf "%-15s %-25s %-30s\n" "----" "----" "-----------"
   for i in "${!AGENT_SLUGS[@]}"; do
-    slug="${AGENT_SLUGS[$i]}"
-    name="${AGENT_NAMES[$i]}"
-    user="${AGENT_USERS[$i]}"
-    case "$slug" in
-      codex)      trigger="@-mention (1 comment)";;
-      gemini)     trigger="@-mention (1 comment)";;
-      coderabbit) trigger="@-mention (1 comment)";;
-      *)          trigger="@-mention (1 comment)";;
-    esac
-    printf "%-15s %-22s %-20s %s\n" "$slug" "$name" "$user" "$trigger"
+    printf "%-15s %-25s %-30s\n" "${AGENT_SLUGS[$i]}" "${AGENT_NAMES[$i]}" "${AGENT_USERS[$i]}"
   done
 }
 
-# Post the trigger comment(s) for a single agent
-# Args: $1=slug  $2=REPO  $3=PR
-invoke_agent() {
+# Resolve slug to GitHub username; returns empty + error for unknown slugs
+slug_to_user() {
   local slug="$1"
-  local repo="$2"
-  local pr="$3"
-
-  case "$slug" in
-    codex)
-      echo "  → Invoking Codex (@codex)..."
-      gh pr comment "$pr" --repo "$repo" --body "@codex please review this PR."
-      ;;
-    gemini)
-      echo "  → Invoking Gemini (@gemini-code-assist)..."
-      gh pr comment "$pr" --repo "$repo" --body "@gemini-code-assist please review this PR."
-      ;;
-    coderabbit)
-      echo "  → Invoking CodeRabbit (@coderabbitai)..."
-      gh pr comment "$pr" --repo "$repo" --body "@coderabbitai review"
-      ;;
-    *)
-      echo "  Warning: unknown agent slug '$slug' — skipping." >&2
-      return 1
-      ;;
-  esac
+  for i in "${!AGENT_SLUGS[@]}"; do
+    if [ "${AGENT_SLUGS[$i]}" = "$slug" ]; then
+      echo "${AGENT_USERS[$i]}"
+      return 0
+    fi
+  done
+  echo "  Warning: unknown agent slug '$slug' — skipping." >&2
+  return 1
 }
 
 # --- Argument parsing ---
@@ -146,19 +122,28 @@ else
   SELECTED=("${AGENT_SLUGS[@]}")
 fi
 
-# Invoke each selected agent
+# Build combined @-mention string from selected agents
+MENTIONS=""
 INVOKED=0
 for slug in "${SELECTED[@]}"; do
   slug="${slug// /}"  # trim any whitespace
-  if invoke_agent "$slug" "$REPO" "$PR"; then
-    INVOKED=$((INVOKED + 1))
-  fi
+  user=$(slug_to_user "$slug") || continue
+  MENTIONS="${MENTIONS}@${user} "
+  INVOKED=$((INVOKED + 1))
+  echo "  Including ${slug} (@${user})"
 done
 
-echo ""
 if [ "$INVOKED" -eq 0 ]; then
-  echo "Error: No agents were successfully invoked on PR #$PR." >&2
+  echo "Error: No valid agents selected for PR #$PR." >&2
   exit 1
 fi
-echo "Done. Invoked $INVOKED agent(s) on PR #$PR."
+
+# Post ONE combined comment
+BODY="${MENTIONS}please review this PR."
+echo ""
+echo "Posting combined trigger comment..."
+gh pr comment "$PR" --repo "$REPO" --body "$BODY" | cat
+
+echo ""
+echo "Done. Invoked $INVOKED agent(s) on PR #$PR with a single comment."
 echo "Wait for agent responses, then re-run check-pr-feedback.sh to collect feedback."

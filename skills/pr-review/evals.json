@@ -68,14 +68,17 @@
     "prompt": "Start a review loop on my PR — keep fixing and re-invoking until no more feedback.",
     "expectations": [
       "Recognizes loop mode from keyword 'loop'",
+      "Uses open-branch.sh to ensure not on main/master before starting",
       "Uses create-pr.sh for idempotent PR creation",
       "Captures ROUND_START timestamp before each invoke round",
+      "Round 1 uses invoke-review-agents.sh; rounds 2+ rely on @-mentions in Fix Report footer",
       "Uses wait-for-reviews.sh --since to poll for new feedback",
       "Uses check-new-feedback.sh --since for differential feedback (not check-pr-feedback.sh)",
       "Uses commit-and-push.sh to commit and push fixes",
-      "Describes the cycle: create-pr → timestamp → invoke → wait → check → fix → commit → inline reply → Fix Report → re-invoke",
-      "Fix Report includes re-invocation footer: 'Re-invoking review agents for next round.'",
-      "States termination conditions: 0 new items in check-new-feedback.sh, wait timeout, reviewer approve, or user stops"
+      "Uses post-fix-report.sh with file-path argument",
+      "Fix Report footer has @-mentions for re-review (before max round)",
+      "Respects max rounds (default 5); final round footer says max reached",
+      "States termination conditions: 0 new items, wait timeout, approve, user stops, or max rounds"
     ]
   }
 ]

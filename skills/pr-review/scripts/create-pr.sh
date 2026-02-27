@@ -1,8 +1,9 @@
 #!/bin/bash
 # Create a PR for the current branch (idempotent — returns existing PR if one exists)
-# Usage: ./create-pr.sh --title TITLE [--body BODY]
+# Usage: ./create-pr.sh --title TITLE [--body BODY_OR_FILE]
 #        echo "body" | ./create-pr.sh --title TITLE
 #
+# --body accepts a file path (read from file) or a text string.
 # Idempotent: if a PR already exists for the current branch, outputs its info and exits 0.
 # Pushes branch to remote first if not yet pushed.
 # Refuses to create a PR from main/master.
@@ -39,11 +40,20 @@ while [ $# -gt 0 ]; do
         echo "Error: --body requires a value." >&2
         exit 1
       fi
-      BODY="$2"
+      if [ -f "$2" ]; then
+        BODY=$(cat "$2")
+      else
+        BODY="$2"
+      fi
       shift 2
       ;;
     --body=*)
-      BODY="${1#--body=}"
+      _val="${1#--body=}"
+      if [ -f "$_val" ]; then
+        BODY=$(cat "$_val")
+      else
+        BODY="$_val"
+      fi
       shift
       ;;
     *)

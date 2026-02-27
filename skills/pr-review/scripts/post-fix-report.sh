@@ -1,10 +1,10 @@
 #!/bin/bash
 # Post a Fix Report as a PR conversation comment
-# Usage: ./post-fix-report.sh [PR_NUMBER] [BODY]
+# Usage: ./post-fix-report.sh [PR_NUMBER] FILE_PATH
 #        echo "body" | ./post-fix-report.sh [PR_NUMBER]
 #
 # PR_NUMBER is optional — auto-detected from current branch if omitted.
-# BODY can be passed as argument(s) or via stdin.
+# BODY is read from FILE_PATH (preferred) or stdin.
 
 set -euo pipefail
 
@@ -29,7 +29,7 @@ fi
 
 if [ -z "$PR" ]; then
   echo "Error: No PR number provided and couldn't detect current PR from branch" >&2
-  echo "Usage: $0 [PR_NUMBER] [BODY]" >&2
+  echo "Usage: $0 [PR_NUMBER] FILE_PATH" >&2
   echo "       echo 'body' | $0 [PR_NUMBER]" >&2
   echo "" >&2
   echo "Make sure you are:" >&2
@@ -41,15 +41,23 @@ if [ -z "$PR" ]; then
   exit 1
 fi
 
-# Read body from remaining args or stdin
+# Read body from file path or stdin
 if [ $# -gt 0 ]; then
-  BODY="$*"
+  FILE_PATH="$1"
+  if [ ! -f "$FILE_PATH" ]; then
+    echo "Error: File not found: $FILE_PATH" >&2
+    echo "" >&2
+    echo "Usage: $0 [PR_NUMBER] FILE_PATH" >&2
+    echo "       echo 'body' | $0 [PR_NUMBER]" >&2
+    exit 1
+  fi
+  BODY=$(cat "$FILE_PATH")
 elif [ ! -t 0 ]; then
   BODY=$(cat)
 else
   echo "Error: No body provided." >&2
   echo "" >&2
-  echo "Usage: $0 [PR_NUMBER] BODY" >&2
+  echo "Usage: $0 [PR_NUMBER] FILE_PATH" >&2
   echo "       echo 'body' | $0 [PR_NUMBER]" >&2
   exit 1
 fi

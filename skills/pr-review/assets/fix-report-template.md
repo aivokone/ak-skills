@@ -12,7 +12,7 @@
 
 ---
 
-<!-- Loop mode variant — use when running a review loop -->
+<!-- Loop mode variant — use when running a review loop (rounds before max) -->
 ### Fix Report — Round [N]
 
 **Addressed [bot/agent name] [inline/conversation] comments:**
@@ -22,4 +22,18 @@
 **Note:** Replied to inline threads:
 - L10: [inline-thread-url]
 
-Re-invoking review agents for next round.
+@chatgpt-codex-connector @gemini-code-assist @coderabbitai please re-review.
+
+---
+
+<!-- Loop mode variant — final round (max rounds reached) -->
+### Fix Report — Round [N] (Final)
+
+**Addressed [bot/agent name] [inline/conversation] comments:**
+- [file.ext:L10 SymbolName]: FIXED @ [commit-hash] — verified: [command or check]
+  - Inline reply posted, tagged @[github-user]
+
+**Note:** Replied to inline threads:
+- L10: [inline-thread-url]
+
+Max review rounds ([N]) reached. Remaining items addressed above. Manual re-review recommended.
