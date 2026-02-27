@@ -44,5 +44,33 @@
       "Group findings by severity (Blocking vs Optional)",
       "Include file:line and symbol anchor with verification commands for blocking items"
     ]
+  },
+  {
+    "name": "Invoke review agents when no feedback",
+    "prompt": "I just opened a PR but there are no review comments yet. What should I do?",
+    "expectations": [
+      "Runs check-pr-feedback.sh first to confirm all three channels are empty",
+      "Invokes review agents using invoke-review-agents.sh (all agents, no --agents filter)",
+      "Informs the user that trigger comments were posted and suggests re-checking after agents respond"
+    ]
+  },
+  {
+    "name": "Invoke specific review agents",
+    "prompt": "Can you ask Gemini and Codex to review my PR?",
+    "expectations": [
+      "Uses invoke-review-agents.sh with --agents gemini,codex",
+      "Does not invoke CodeRabbit or other agents not mentioned",
+      "Informs the user which agents were triggered"
+    ]
+  },
+  {
+    "name": "Loop mode review cycle",
+    "prompt": "Start a review loop on my PR — keep fixing and re-invoking until no more feedback.",
+    "expectations": [
+      "Recognizes loop mode from keyword 'loop'",
+      "Describes the cycle: invoke → check → fix → inline reply (with @github-user tag) → Fix Report → re-invoke → repeat",
+      "Fix Report includes re-invocation footer: 'Re-invoking review agents for next round.'",
+      "States termination conditions: empty feedback, reviewer approve, or user stops"
+    ]
   }
 ]

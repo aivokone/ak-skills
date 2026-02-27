@@ -186,13 +186,17 @@ npx skills add aivokone/ak-skills --skill local-ref -g
 Systematic PR review workflow for checking, responding to, and reporting on
 feedback from any source — human reviewers, review bots (CodeRabbit, Gemini,
 Codex, Snyk, etc.), or AI agents. Ensures all three feedback channels
-(conversation, inline, reviews) are checked so no feedback is missed.
+(conversation, inline, reviews) are checked so no feedback is missed. When no
+feedback exists, automatically invokes review agents. Supports a continuous
+loop mode (invoke → check → fix → report → re-invoke) until all feedback is
+resolved.
 
 Includes helper scripts (relative to skill directory):
 
 - `scripts/check-pr-feedback.sh` — check all three feedback channels for a PR
 - `scripts/reply-to-inline.sh` — reply in-thread to inline comments
 - `scripts/post-fix-report.sh` — post Fix Report as a PR conversation comment
+- `scripts/invoke-review-agents.sh` — trigger review agents (Codex, Gemini, CodeRabbit) on a PR
 
 Source:
 - `skills/pr-review/SKILL.md`
