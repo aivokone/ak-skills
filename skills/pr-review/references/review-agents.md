@@ -22,6 +22,8 @@ Run `invoke-review-agents.sh` when:
 - Starting a new review round after fixes and re-invocation is needed
 - Loop mode: at the start of each fix-review cycle
 
+**After invoking:** Use `wait-for-reviews.sh --since $ROUND_START` to poll for responses (agents typically respond in 1–10 minutes). This avoids premature re-checks and ensures the loop only proceeds when new feedback is available.
+
 ```bash
 # Invoke all known agents
 ~/.claude/skills/pr-review/scripts/invoke-review-agents.sh

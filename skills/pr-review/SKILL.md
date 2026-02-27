@@ -64,6 +64,50 @@ cat <<'EOF' | ~/.claude/skills/pr-review/scripts/post-fix-report.sh
 EOF
 ```
 
+### Create PR (Idempotent)
+
+```bash
+~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body "Description"
+```
+
+Or body via stdin:
+
+```bash
+echo "Description" | ~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title"
+```
+
+Idempotent: if a PR already exists for the current branch, outputs its info. Refuses to run on `main`/`master`. Pushes branch to remote if not yet pushed.
+
+### Commit and Push
+
+```bash
+~/.claude/skills/pr-review/scripts/commit-and-push.sh -m "fix: address review feedback"
+```
+
+Or message via stdin:
+
+```bash
+echo "fix: address review feedback" | ~/.claude/skills/pr-review/scripts/commit-and-push.sh
+```
+
+Stages all changes, commits, and pushes. Refuses to run on `main`/`master`. Never force-pushes. Outputs commit hash and branch.
+
+### Wait for Reviews
+
+```bash
+~/.claude/skills/pr-review/scripts/wait-for-reviews.sh [PR_NUMBER] --since TIMESTAMP [--timeout 600] [--interval 30]
+```
+
+Polls all three feedback channels for new comments posted after `TIMESTAMP` by non-self users. Exits 0 when new feedback detected, exits 1 on timeout. Default: 10 min timeout, 30s interval.
+
+### Check New Feedback (Differential)
+
+```bash
+~/.claude/skills/pr-review/scripts/check-new-feedback.sh [PR_NUMBER] --since TIMESTAMP
+```
+
+Like `check-pr-feedback.sh` but only shows feedback created after `TIMESTAMP`, excluding self-posted comments. Use in loop mode to distinguish new from already-addressed feedback. Ends with a summary line: `Summary: N conversation, M inline, K reviews`.
+
 ## Commit Workflows
 
 ### Quick Commit (No Approval)
@@ -107,8 +151,8 @@ Example check:
 # 1. Test changes (run project-specific tests)
 npm test  # or: pytest, go test, etc.
 
-# 2. Check for new feedback since last check
-~/.claude/skills/pr-review/scripts/check-pr-feedback.sh
+# 2. Check for new feedback since last check (use ROUND_START from loop)
+~/.claude/skills/pr-review/scripts/check-new-feedback.sh --since "$ROUND_START"
 # (prevents "ready to merge" when new comments exist)
 
 # 3. If user active: "Ready to commit these changes?"
@@ -277,17 +321,20 @@ Activate when the user's prompt requests a review loop, review cycle, or similar
 
 **Loop workflow:**
 
-1. **Invoke** — `invoke-review-agents.sh` (or `--agents` if specified)
-2. **Wait** — inform the user; do not re-check immediately
-3. **Check** — `check-pr-feedback.sh`; if all three sections show `None`, loop terminates
-4. **Fix** — address all feedback (critically evaluate each item first)
-5. **Reply inline** — for each inline comment, sign with agent identity; tag the reviewer's `@github-user`
-6. **Fix Report** — post ONE Fix Report; footer: `"Re-invoking review agents for next round."`
-7. **Re-invoke** — `invoke-review-agents.sh` to start next round
-8. **Repeat** from step 3
+0. **PR** — `create-pr.sh --title "..." --body "..."` (idempotent — skips if PR exists)
+1. **Timestamp** — capture `ROUND_START=$(date -u +%Y-%m-%dT%H:%M:%SZ)`
+2. **Invoke** — `invoke-review-agents.sh` (or `--agents` if specified)
+3. **Wait** — `wait-for-reviews.sh --since $ROUND_START` (polls until new feedback or timeout)
+4. **Check** — `check-new-feedback.sh --since $ROUND_START` (shows only new items)
+5. **Fix** — address all new feedback (critically evaluate each item first)
+6. **Commit** — `commit-and-push.sh -m "fix: address review feedback round N"`
+7. **Reply inline** — `reply-to-inline.sh` for each inline comment; sign with agent identity; tag the reviewer's `@github-user`
+8. **Fix Report** — `post-fix-report.sh` with re-invocation footer
+9. **Re-invoke** — go to step 1
 
 **Termination conditions:**
-- All three channels show `None` after invocation (no new feedback)
+- `check-new-feedback.sh` summary reports 0 new items across all channels
+- `wait-for-reviews.sh` times out (no new feedback after invocation)
 - A reviewer posts an Approve review
 - User explicitly stops the loop
 

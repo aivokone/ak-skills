@@ -68,9 +68,14 @@
     "prompt": "Start a review loop on my PR — keep fixing and re-invoking until no more feedback.",
     "expectations": [
       "Recognizes loop mode from keyword 'loop'",
-      "Describes the cycle: invoke → check → fix → inline reply (with @github-user tag) → Fix Report → re-invoke → repeat",
+      "Uses create-pr.sh for idempotent PR creation",
+      "Captures ROUND_START timestamp before each invoke round",
+      "Uses wait-for-reviews.sh --since to poll for new feedback",
+      "Uses check-new-feedback.sh --since for differential feedback (not check-pr-feedback.sh)",
+      "Uses commit-and-push.sh to commit and push fixes",
+      "Describes the cycle: create-pr → timestamp → invoke → wait → check → fix → commit → inline reply → Fix Report → re-invoke",
       "Fix Report includes re-invocation footer: 'Re-invoking review agents for next round.'",
-      "States termination conditions: empty feedback, reviewer approve, or user stops"
+      "States termination conditions: 0 new items in check-new-feedback.sh, wait timeout, reviewer approve, or user stops"
     ]
   }
 ]

@@ -197,6 +197,10 @@ Includes helper scripts (relative to skill directory):
 - `scripts/reply-to-inline.sh` — reply in-thread to inline comments
 - `scripts/post-fix-report.sh` — post Fix Report as a PR conversation comment
 - `scripts/invoke-review-agents.sh` — trigger review agents (Codex, Gemini, CodeRabbit) on a PR
+- `scripts/create-pr.sh` — idempotent PR creation with branch safety
+- `scripts/commit-and-push.sh` — stage, commit, and push with branch safety
+- `scripts/wait-for-reviews.sh` — poll for new feedback after invoking agents
+- `scripts/check-new-feedback.sh` — differential feedback check (new items only since timestamp)
 
 Source:
 - `skills/pr-review/SKILL.md`
