@@ -13,9 +13,12 @@ MESSAGE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -m)
-      shift
-      MESSAGE="${1:-}"
-      shift
+      if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
+        echo "Error: -m requires a value." >&2
+        exit 1
+      fi
+      MESSAGE="$2"
+      shift 2
       ;;
     -m=*)
       MESSAGE="${1#-m=}"

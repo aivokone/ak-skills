@@ -23,18 +23,24 @@ BODY=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --title)
-      shift
-      TITLE="${1:-}"
-      shift
+      if [[ -z "${2:-}" || "${2:0:2}" == "--" ]]; then
+        echo "Error: --title requires a value." >&2
+        exit 1
+      fi
+      TITLE="$2"
+      shift 2
       ;;
     --title=*)
       TITLE="${1#--title=}"
       shift
       ;;
     --body)
-      shift
-      BODY="${1:-}"
-      shift
+      if [[ -z "${2:-}" || "${2:0:2}" == "--" ]]; then
+        echo "Error: --body requires a value." >&2
+        exit 1
+      fi
+      BODY="$2"
+      shift 2
       ;;
     --body=*)
       BODY="${1#--body=}"

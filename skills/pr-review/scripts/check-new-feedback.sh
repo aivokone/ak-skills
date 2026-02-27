@@ -22,9 +22,12 @@ SINCE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --since)
-      shift
-      SINCE="${1:-}"
-      shift
+      if [[ -z "${2:-}" || "${2:0:2}" == "--" ]]; then
+        echo "Error: --since requires a value." >&2
+        exit 1
+      fi
+      SINCE="$2"
+      shift 2
       ;;
     --since=*)
       SINCE="${1#--since=}"

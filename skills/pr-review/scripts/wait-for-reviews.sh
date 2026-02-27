@@ -24,27 +24,36 @@ INTERVAL=30
 while [ $# -gt 0 ]; do
   case "$1" in
     --since)
-      shift
-      SINCE="${1:-}"
-      shift
+      if [[ -z "${2:-}" || "${2:0:2}" == "--" ]]; then
+        echo "Error: --since requires a value." >&2
+        exit 1
+      fi
+      SINCE="$2"
+      shift 2
       ;;
     --since=*)
       SINCE="${1#--since=}"
       shift
       ;;
     --timeout)
-      shift
-      TIMEOUT="${1:-600}"
-      shift
+      if [[ -z "${2:-}" || "${2:0:2}" == "--" ]]; then
+        echo "Error: --timeout requires a value." >&2
+        exit 1
+      fi
+      TIMEOUT="$2"
+      shift 2
       ;;
     --timeout=*)
       TIMEOUT="${1#--timeout=}"
       shift
       ;;
     --interval)
-      shift
-      INTERVAL="${1:-30}"
-      shift
+      if [[ -z "${2:-}" || "${2:0:2}" == "--" ]]; then
+        echo "Error: --interval requires a value." >&2
+        exit 1
+      fi
+      INTERVAL="$2"
+      shift 2
       ;;
     --interval=*)
       INTERVAL="${1#--interval=}"
