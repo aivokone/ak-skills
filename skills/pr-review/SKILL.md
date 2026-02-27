@@ -35,6 +35,21 @@ If no PR number provided, detects current PR from branch.
 ~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> "Your message"
 ```
 
+### Post Fix Report
+
+```bash
+~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER] "BODY"
+```
+
+Or via stdin for multi-line content:
+
+```bash
+cat <<'EOF' | ~/.claude/skills/pr-review/scripts/post-fix-report.sh
+### Fix Report
+- [file:L10]: FIXED @ abc123
+EOF
+```
+
 Replies in-thread to inline comments. Uses `-F` flag (not `--raw-field`) which properly handles numeric ID conversion in `gh` CLI.
 
 **Must be run from repository root** with an active PR branch.
@@ -164,16 +179,20 @@ If a review comment is incorrect, respond with a clear explanation of why rather
 
 After addressing feedback, **always** post ONE conversation comment (Fix Report). This is separate from requesting re-review — the Fix Report documents what was done, even if no re-review is needed.
 
-```markdown
+Use the script to post it:
+
+```bash
+cat <<'EOF' | ~/.claude/skills/pr-review/scripts/post-fix-report.sh
 ### Fix Report
 
 - [file.ext:L10 Symbol]: FIXED @ abc123 — verified: `npm test` passes
 - [file.ext:L42 fn]: WONTFIX — reason: intentional per AGENTS.md
 - [file.ext:L100 class]: DEFERRED — tracking: #123
 - [file.ext:L200 method]: QUESTION — Should this handle X?
+EOF
 ```
 
-Optionally, if re-review is needed, add: `@reviewer-username please re-review.`
+Optionally, if re-review is needed, add `@reviewer-username please re-review.` at the end of the body.
 
 ### Fix Statuses
 
