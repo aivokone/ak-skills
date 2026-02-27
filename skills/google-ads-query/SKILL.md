@@ -9,7 +9,7 @@ description: "Query any Google Ads account via GAQL. Use when the user asks abou
 
 Check prerequisites before querying:
 
-**Script path resolution:** Before running scripts, determine the correct base path. Check in this order:
+**Script path resolution:** Before running any script, determine the correct base path. Check in this order:
 1. `.claude/skills/google-ads-query/scripts/` — project-local install (run from repository root)
 2. `~/.claude/skills/google-ads-query/scripts/` — global install
 
