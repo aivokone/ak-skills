@@ -9,7 +9,7 @@ description: "Query Google Analytics 4 via the Data API. Use when the user asks 
 
 Check prerequisites before querying:
 
-**Script path resolution:** Before running scripts, determine the correct base path. Check in this order:
+**Script path resolution:** Before running any script, determine the correct base path. Check in this order:
 1. `.claude/skills/ga4-query/scripts/` — project-local install (run from repository root)
 2. `~/.claude/skills/ga4-query/scripts/` — global install
 
