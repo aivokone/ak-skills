@@ -70,12 +70,15 @@ SELF=$(gh api user --jq .login 2>/dev/null || echo "")
 echo "Checking new feedback on PR #$PR in $REPO (since $SINCE, excluding @$SELF)"
 echo ""
 
+# NOTE: --paginate returns one JSON array per page. We use jq -s 'add // []'
+# to merge all pages into a single array before filtering/counting.
+
 # --- Conversation comments ---
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📝 NEW CONVERSATION COMMENTS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-RAW_COMMENTS=$(gh api --paginate "repos/$REPO/issues/$PR/comments?since=$SINCE" \
-  --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")]" 2>/dev/null || echo "[]")
+RAW_COMMENTS=$(gh api --paginate "repos/$REPO/issues/$PR/comments?since=$SINCE" 2>/dev/null \
+  | jq -s "add // [] | [.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")]" || echo "[]")
 CONV_COUNT=$(echo "$RAW_COMMENTS" | jq 'length' 2>/dev/null || echo "0")
 if [ "$CONV_COUNT" -eq 0 ]; then
   echo "None"
@@ -88,8 +91,8 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "💬 NEW INLINE COMMENTS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-RAW_INLINE=$(gh api --paginate "repos/$REPO/pulls/$PR/comments?since=$SINCE" \
-  --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")]" 2>/dev/null || echo "[]")
+RAW_INLINE=$(gh api --paginate "repos/$REPO/pulls/$PR/comments?since=$SINCE" 2>/dev/null \
+  | jq -s "add // [] | [.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")]" || echo "[]")
 INLINE_COUNT=$(echo "$RAW_INLINE" | jq 'length' 2>/dev/null || echo "0")
 if [ "$INLINE_COUNT" -eq 0 ]; then
   echo "None"
@@ -102,8 +105,8 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ NEW REVIEWS (state + body)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-RAW_REVIEWS=$(gh api --paginate "repos/$REPO/pulls/$PR/reviews" \
-  --jq "[.[] | select(.user.login != \"$SELF\") | select(.submitted_at > \"$SINCE\")]" 2>/dev/null || echo "[]")
+RAW_REVIEWS=$(gh api --paginate "repos/$REPO/pulls/$PR/reviews" 2>/dev/null \
+  | jq -s "add // [] | [.[] | select(.user.login != \"$SELF\") | select(.submitted_at > \"$SINCE\")]" || echo "[]")
 REV_COUNT=$(echo "$RAW_REVIEWS" | jq 'length' 2>/dev/null || echo "0")
 if [ "$REV_COUNT" -eq 0 ]; then
   echo "None"

@@ -62,6 +62,12 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+# --- Validate interval ---
+if ! [ "$INTERVAL" -gt 0 ] 2>/dev/null; then
+  echo "Error: --interval must be a positive integer (got '$INTERVAL')." >&2
+  exit 1
+fi
+
 if [ -z "$SINCE" ]; then
   echo "Error: --since TIMESTAMP is required." >&2
   echo "Usage: $0 [PR_NUMBER] --since TIMESTAMP [--timeout 600] [--interval 30]" >&2
@@ -95,22 +101,25 @@ ELAPSED=0
 check_new_feedback() {
   local count=0
 
-  # Conversation comments (since parameter is native; paginate for completeness)
+  # NOTE: --paginate returns one JSON array per page. We use jq -s 'add // []'
+  # to merge all pages into a single array before filtering/counting.
+
+  # Conversation comments
   local conv
-  conv=$(gh api --paginate "repos/$REPO/issues/$PR/comments?since=$SINCE" \
-    --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")] | length" 2>/dev/null || echo "0")
+  conv=$(gh api --paginate "repos/$REPO/issues/$PR/comments?since=$SINCE" 2>/dev/null \
+    | jq -s "add // [] | [.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")] | length" || echo "0")
   count=$((count + conv))
 
-  # Inline comments (since parameter is native; paginate for completeness)
+  # Inline comments
   local inl
-  inl=$(gh api --paginate "repos/$REPO/pulls/$PR/comments?since=$SINCE" \
-    --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")] | length" 2>/dev/null || echo "0")
+  inl=$(gh api --paginate "repos/$REPO/pulls/$PR/comments?since=$SINCE" 2>/dev/null \
+    | jq -s "add // [] | [.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")] | length" || echo "0")
   count=$((count + inl))
 
-  # Reviews (no native since — filter with jq; paginate)
+  # Reviews (no native since — filter with jq)
   local rev
-  rev=$(gh api --paginate "repos/$REPO/pulls/$PR/reviews" \
-    --jq "[.[] | select(.user.login != \"$SELF\") | select(.submitted_at > \"$SINCE\")] | length" 2>/dev/null || echo "0")
+  rev=$(gh api --paginate "repos/$REPO/pulls/$PR/reviews" 2>/dev/null \
+    | jq -s "add // [] | [.[] | select(.user.login != \"$SELF\") | select(.submitted_at > \"$SINCE\")] | length" || echo "0")
   count=$((count + rev))
 
   echo "$count"
