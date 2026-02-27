@@ -14,15 +14,15 @@ Systematic workflow for checking, responding to, and reporting on PR feedback fr
 ## Quick Commands
 
 **Script path resolution:** Before running any script, determine the correct base path. Check in this order:
-1. `.claude/skills/pr-review/scripts/` — project-local install (run from repository root)
-2. `~/.claude/skills/pr-review/scripts/` — global install
+1. `~/.claude/skills/pr-review/scripts/` — global install for Claude Code
+2. Other global paths by preference of the agent
 
-Use whichever path exists. All script paths below use the project-local form; substitute the global path if that's where scripts are found.
+Use whichever path exists. Script paths below use the global form; substitute accordingly for your agent or install method.
 
 ### Check All Feedback (CRITICAL - Use First)
 
 ```bash
-.claude/skills/pr-review/scripts/check-pr-feedback.sh [PR_NUMBER]
+~/.claude/skills/pr-review/scripts/check-pr-feedback.sh [PR_NUMBER]
 ```
 
 Checks all three channels: conversation comments, inline comments, reviews.
@@ -32,7 +32,7 @@ If no PR number provided, detects current PR from branch.
 ### Reply to Inline Comment
 
 ```bash
-.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> "Your message"
+~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> "Your message"
 ```
 
 Replies in-thread to inline comments. Uses `-F` flag (not `--raw-field`) which properly handles numeric ID conversion in `gh` CLI.
@@ -85,7 +85,7 @@ Example check:
 npm test  # or: pytest, go test, etc.
 
 # 2. Check for new feedback since last check
-.claude/skills/pr-review/scripts/check-pr-feedback.sh
+~/.claude/skills/pr-review/scripts/check-pr-feedback.sh
 # (prevents "ready to merge" when new comments exist)
 
 # 3. If user active: "Ready to commit these changes?"
@@ -127,7 +127,7 @@ Fill Summary, How to test, and Notes sections.
 ### Critical Rule: Check ALL Three Channels
 
 ```bash
-.claude/skills/pr-review/scripts/check-pr-feedback.sh
+~/.claude/skills/pr-review/scripts/check-pr-feedback.sh
 ```
 
 **Why:** Different reviewers post in different channels. Missing any channel = missing feedback.
@@ -155,7 +155,7 @@ If a review comment is incorrect, respond with a clear explanation of why rather
 2. **Reply inline** to each comment (sign with agent identity):
 
 ```bash
-.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> "Fixed @ abc123. [details] —[Your Agent Name]"
+~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> "Fixed @ abc123. [details] —[Your Agent Name]"
 ```
 
 3. **Include in Fix Report** (conversation comment) — the Fix Report summarizes all changes, but inline replies ensure each comment gets a direct acknowledgment
@@ -260,7 +260,7 @@ gh api repos/$REPO/pulls/$PR/comments \
 ## Troubleshooting
 
 **"Can't find review comments"**
-→ Check all three channels. Use `.claude/skills/pr-review/scripts/check-pr-feedback.sh`, not just `gh pr view`.
+→ Check all three channels. Use `~/.claude/skills/pr-review/scripts/check-pr-feedback.sh`, not just `gh pr view`.
 
 **"Reviewer posted inline, should I reply inline?"**
 → Yes, always. Reply inline with a brief ack so the comment can be resolved in GitHub UI. Also include in Fix Report.
@@ -272,7 +272,7 @@ gh api repos/$REPO/pulls/$PR/comments \
 → Mark QUESTION, check project docs, cite specific suggestions.
 
 **"Script can't detect PR"**
-→ Run from repository root (not `.claude/skills/`). Must be on branch with open PR.
+→ Run from repository root. Must be on branch with open PR.
 
 **"Reply script fails with HTTP 422"**
 → Use `-F in_reply_to=ID` not `--raw-field`. The `-F` flag works correctly with `gh` CLI for numeric IDs.
@@ -295,7 +295,7 @@ gh api repos/$REPO/pulls/$PR/comments \
 
 **Most common mistakes:**
 ❌ Only checking conversation or `gh pr view`
-✅ Always run `.claude/skills/pr-review/scripts/check-pr-feedback.sh`
+✅ Always run `~/.claude/skills/pr-review/scripts/check-pr-feedback.sh`
 
 ❌ Blindly applying review suggestions without verifying the issue exists
 ✅ Read the actual code, confirm the problem, test the fix
