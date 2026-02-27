@@ -51,7 +51,8 @@
     "expectations": [
       "Runs check-pr-feedback.sh first to confirm all three channels are empty",
       "Invokes review agents using invoke-review-agents.sh (all agents, no --agents filter)",
-      "Informs the user that trigger comments were posted and suggests re-checking after agents respond"
+      "Informs the user that trigger comments were posted and suggests re-checking after agents respond",
+      "Notes that if PR was just created with --invoke, triggers are already in the PR body and separate invocation is not needed"
     ]
   },
   {
@@ -69,9 +70,10 @@
     "expectations": [
       "Recognizes loop mode from keyword 'loop'",
       "Uses open-branch.sh to ensure not on main/master before starting",
-      "Uses create-pr.sh for idempotent PR creation",
+      "Uses create-pr.sh --invoke to embed triggers in PR body when creating new PR",
+      "Distinguishes CREATED: vs EXISTS: output to decide whether separate invoke needed",
       "Captures ROUND_START timestamp before each invoke round",
-      "Round 1 uses invoke-review-agents.sh; rounds 2+ rely on @-mentions in Fix Report footer",
+      "Round 1 uses invoke-review-agents.sh only if PR already existed; rounds 2+ rely on @-mentions in Fix Report footer",
       "Uses wait-for-reviews.sh --since to poll for new feedback",
       "Uses check-new-feedback.sh --since for differential feedback (not check-pr-feedback.sh)",
       "Uses commit-and-push.sh to commit and push fixes",

@@ -35,6 +35,27 @@ Run `invoke-review-agents.sh` when:
 ~/.claude/skills/pr-review/scripts/invoke-review-agents.sh --list
 ```
 
+## Embedding Triggers in PR Body
+
+When `create-pr.sh --invoke` creates a new PR, it calls `invoke-review-agents.sh --format-only` to get the trigger text and appends it to the PR body. This avoids posting a separate trigger comment, which would cause double-invocations when auto-review is enabled on the repository.
+
+The `--format-only` flag outputs the trigger text to stdout without making any API calls or requiring a PR to exist. It respects `--agents` filtering:
+
+```bash
+# All agents — full trigger text
+./invoke-review-agents.sh --format-only
+# Output: @chatgpt-codex-connector @gemini-code-assist please review this PR.
+#         @coderabbitai review
+
+# Specific agents only
+./invoke-review-agents.sh --format-only --agents codex
+# Output: @chatgpt-codex-connector please review this PR.
+```
+
+**Two scenarios:**
+1. **New PR** (`create-pr.sh --invoke`): triggers embedded in PR body → no separate invoke needed
+2. **Existing PR**: run `invoke-review-agents.sh` directly to post a trigger comment
+
 ## Adding a New Agent
 
 To register a new review agent, edit `scripts/invoke-review-agents.sh`:

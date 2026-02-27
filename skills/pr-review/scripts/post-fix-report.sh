@@ -70,4 +70,4 @@ fi
 
 echo "Posting Fix Report to PR #$PR in $REPO..."
 
-gh pr comment "$PR" --repo "$REPO" --body "$BODY" | cat
+gh pr comment "$PR" --repo "$REPO" --body "$BODY"

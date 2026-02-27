@@ -1,12 +1,17 @@
 #!/bin/bash
 # Create a PR for the current branch (idempotent — returns existing PR if one exists)
-# Usage: ./create-pr.sh --title TITLE [--body BODY_OR_FILE]
+# Usage: ./create-pr.sh --title TITLE [--body BODY_OR_FILE] [--invoke]
 #        echo "body" | ./create-pr.sh --title TITLE
 #
 # --body accepts a file path (read from file) or a text string.
+# --invoke appends review agent triggers to the PR body (avoids separate trigger comment).
 # Idempotent: if a PR already exists for the current branch, outputs its info and exits 0.
 # Pushes branch to remote first if not yet pushed.
 # Refuses to create a PR from main/master.
+#
+# Output prefixes (machine-parseable):
+#   EXISTS: <url>   — PR already existed
+#   CREATED: <url>  — new PR was created
 
 set -euo pipefail
 
@@ -20,6 +25,7 @@ fi
 # --- Argument parsing ---
 TITLE=""
 BODY=""
+INVOKE=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -56,9 +62,13 @@ while [ $# -gt 0 ]; do
       fi
       shift
       ;;
+    --invoke)
+      INVOKE=true
+      shift
+      ;;
     *)
       echo "Error: unknown argument: $1" >&2
-      echo "Usage: $0 --title TITLE [--body BODY]" >&2
+      echo "Usage: $0 --title TITLE [--body BODY] [--invoke]" >&2
       echo "       echo 'body' | $0 --title TITLE" >&2
       exit 1
       ;;
@@ -83,10 +93,9 @@ if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
 fi
 
 # --- Check for existing PR ---
-EXISTING=$(gh pr view --json number,url --jq '"PR #\(.number) \(.url)"' 2>/dev/null || echo "")
-if [ -n "$EXISTING" ]; then
-  echo "$EXISTING"
-  echo "(PR already exists for branch $BRANCH)"
+EXISTING_URL=$(gh pr view --json url --jq '.url' 2>/dev/null || echo "")
+if [ -n "$EXISTING_URL" ]; then
+  echo "EXISTS: $EXISTING_URL"
   exit 0
 fi
 
@@ -103,6 +112,19 @@ if ! git ls-remote --exit-code --heads origin "$BRANCH" &>/dev/null; then
   git push -u origin HEAD
 fi
 
+# --- Append review agent triggers if --invoke ---
+if $INVOKE; then
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  TRIGGER_TEXT=$("$SCRIPT_DIR/invoke-review-agents.sh" --format-only)
+  if [ -n "$TRIGGER_TEXT" ]; then
+    BODY="${BODY:+$BODY
+
+---
+
+}${TRIGGER_TEXT}"
+  fi
+fi
+
 # --- Create PR ---
 CREATE_ARGS=(gh pr create --title "$TITLE")
 if [ -n "$BODY" ]; then
@@ -110,6 +132,5 @@ if [ -n "$BODY" ]; then
 fi
 
 PR_URL=$("${CREATE_ARGS[@]}")
-PR_NUM=${PR_URL##*/}
 
-echo "PR #$PR_NUM $PR_URL"
+echo "CREATED: $PR_URL"

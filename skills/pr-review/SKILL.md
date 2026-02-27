@@ -52,10 +52,10 @@ Replies in-thread to inline comments. Uses `-F` flag (not `--raw-field`) which p
 ### Invoke Review Agents
 
 ```bash
-~/.claude/skills/pr-review/scripts/invoke-review-agents.sh [--agents SLUG,...] [PR_NUMBER]
+~/.claude/skills/pr-review/scripts/invoke-review-agents.sh [--agents SLUG,...] [--format-only] [PR_NUMBER]
 ```
 
-Posts trigger comments to start agent reviews. Without `--agents`, invokes all known agents (Codex, Gemini, CodeRabbit). Use `--list` to see available agents.
+Posts trigger comments to start agent reviews. Without `--agents`, invokes all known agents (Codex, Gemini, CodeRabbit). Use `--list` to see available agents. Use `--format-only` to print trigger text to stdout without posting (for embedding in PR body).
 
 ### Post Fix Report
 
@@ -72,7 +72,7 @@ echo "$body" | ~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER]
 ### Create PR (Idempotent)
 
 ```bash
-~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body /tmp/pr-body.md
+~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body /tmp/pr-body.md [--invoke]
 ```
 
 Or body as text string or via stdin:
@@ -83,6 +83,12 @@ echo "Description" | ~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR
 ```
 
 `--body` auto-detects: if the value is a readable file, reads from it; otherwise treats as text. Idempotent: if a PR already exists, outputs its info. Refuses to run on `main`/`master`. Pushes branch if not yet pushed.
+
+`--invoke` appends review agent trigger text to the PR body (via `invoke-review-agents.sh --format-only`), avoiding a separate trigger comment that causes double-invocations when auto-review is enabled.
+
+Output prefixes (machine-parseable):
+- `EXISTS: <url>` — PR already existed for this branch
+- `CREATED: <url>` — new PR was created
 
 ### Commit and Push
 
@@ -247,6 +253,8 @@ Run `invoke-review-agents.sh` when `check-pr-feedback.sh` returns empty output f
 
 **Agent selection from prompt:** If the user's prompt names specific agents (e.g., "have Codex review this"), use `--agents` with the matching slug(s). Otherwise invoke all.
 
+**Embedding in PR body:** When creating a new PR with `create-pr.sh --invoke`, trigger text is appended to the PR body automatically (via `--format-only`). This avoids a separate trigger comment that would cause double-invocations when auto-review is enabled. Only use `invoke-review-agents.sh` directly when the PR already exists.
+
 **After invoking:** Inform the user that trigger comments were posted and suggest running `check-pr-feedback.sh` again once agents have had time to respond (typically a few minutes).
 
 **See `references/review-agents.md` for the full agent registry and instructions for adding new agents.**
@@ -330,9 +338,9 @@ Activate when the user's prompt requests a review loop, review cycle, or similar
 **Loop workflow:**
 
 0. **Branch** — `open-branch.sh` (idempotent — creates branch if on main/master)
-1. **PR** — `create-pr.sh --title "..." --body /tmp/pr-body.md` (idempotent — skips if PR exists)
+1. **PR** — `create-pr.sh --invoke --title "..." --body /tmp/pr-body.md` — capture output prefix (`CREATED:` / `EXISTS:`)
 2. **Timestamp** — capture `ROUND_START=$(date -u +%Y-%m-%dT%H:%M:%SZ); ROUND=$((ROUND+1))`
-3. **Invoke** — Round 1: `invoke-review-agents.sh` (posts single combined comment). Rounds 2+: agents triggered by @-mentions in previous Fix Report footer (no separate invoke step)
+3. **Invoke** — Round 1: if step 1 output `CREATED:`, skip (triggers in PR body). If `EXISTS:`, run `invoke-review-agents.sh`. Rounds 2+: agents triggered by @-mentions in previous Fix Report footer (no separate invoke step)
 4. **Wait** — `wait-for-reviews.sh --since $ROUND_START` (polls until new feedback or timeout)
 5. **Check** — `check-new-feedback.sh --since $ROUND_START` (shows only new items)
 6. **Fix** — address all new feedback (critically evaluate each item first)

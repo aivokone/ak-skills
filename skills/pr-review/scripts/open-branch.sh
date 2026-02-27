@@ -8,13 +8,6 @@
 
 set -euo pipefail
 
-# Check for required dependencies
-if ! command -v gh &> /dev/null; then
-  echo "Error: 'gh' (GitHub CLI) is not installed. Please install it to use this script." >&2
-  echo "See: https://cli.github.com/" >&2
-  exit 1
-fi
-
 # --- Current branch ---
 BRANCH=$(git branch --show-current 2>/dev/null || echo "")
 if [ -z "$BRANCH" ]; then
