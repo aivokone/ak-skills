@@ -41,6 +41,14 @@ Replies in-thread to inline comments. Uses `-F` flag (not `--raw-field`) which p
 
 **Important:** Always sign inline replies with your agent identity (e.g., `—Claude Sonnet 4.5`, `—GPT-4`, `—Custom Agent`) to distinguish agent responses from human responses in the GitHub UI.
 
+### Invoke Review Agents
+
+```bash
+~/.claude/skills/pr-review/scripts/invoke-review-agents.sh [--agents SLUG,...] [PR_NUMBER]
+```
+
+Posts trigger comments to start agent reviews. Without `--agents`, invokes all known agents (Codex, Gemini, CodeRabbit). Use `--list` to see available agents.
+
 ### Post Fix Report
 
 ```bash
@@ -175,6 +183,24 @@ If a review comment is incorrect, respond with a clear explanation of why rather
 
 3. **Include in Fix Report** (conversation comment) — the Fix Report summarizes all changes, but inline replies ensure each comment gets a direct acknowledgment
 
+## Invoking Review Agents
+
+Run `invoke-review-agents.sh` when `check-pr-feedback.sh` returns empty output from **all three channels** — no feedback means no agents have reviewed yet.
+
+```bash
+# No feedback on the PR? Invoke all agents:
+~/.claude/skills/pr-review/scripts/invoke-review-agents.sh
+
+# User mentioned specific agents (e.g., "ask Gemini and Codex to review"):
+~/.claude/skills/pr-review/scripts/invoke-review-agents.sh --agents gemini,codex
+```
+
+**Agent selection from prompt:** If the user's prompt names specific agents (e.g., "have Codex review this"), use `--agents` with the matching slug(s). Otherwise invoke all.
+
+**After invoking:** Inform the user that trigger comments were posted and suggest running `check-pr-feedback.sh` again once agents have had time to respond (typically a few minutes).
+
+**See `references/review-agents.md` for the full agent registry and instructions for adding new agents.**
+
 ## Fix Reporting
 
 After addressing feedback, **always** post ONE conversation comment (Fix Report). This is separate from requesting re-review — the Fix Report documents what was done, even if no re-review is needed.
@@ -245,6 +271,36 @@ After Fix Report:
 3. **If QUESTION items**: Wait for clarification
 4. **If blocking feedback was only provided inline**: Mention it was addressed, optionally ask to mirror to conversation for future determinism
 
+## Loop Mode
+
+Activate when the user's prompt requests a review loop, review cycle, or similar — in any words — meaning: run the full review-fix-review cycle autonomously until no new feedback remains.
+
+**Loop workflow:**
+
+1. **Invoke** — `invoke-review-agents.sh` (or `--agents` if specified)
+2. **Wait** — inform the user; do not re-check immediately
+3. **Check** — `check-pr-feedback.sh`; if all three sections show `None`, loop terminates
+4. **Fix** — address all feedback (critically evaluate each item first)
+5. **Reply inline** — for each inline comment, sign with agent identity; tag the reviewer's `@github-user`
+6. **Fix Report** — post ONE Fix Report; footer: `"Re-invoking review agents for next round."`
+7. **Re-invoke** — `invoke-review-agents.sh` to start next round
+8. **Repeat** from step 3
+
+**Termination conditions:**
+- All three channels show `None` after invocation (no new feedback)
+- A reviewer posts an Approve review
+- User explicitly stops the loop
+
+**Inline reply tagging:** When replying to a bot/agent inline comment, include the reviewer's GitHub username in the reply (e.g., `—Claude Sonnet 4.6 | addressed @gemini-code-assist feedback`).
+
+**Fix Report footer for loop rounds:**
+
+```markdown
+Re-invoking review agents for next round.
+```
+
+**See `references/fix-report-examples.md` Example 7 for a complete loop-mode Fix Report.**
+
 ## Multi-Reviewer Patterns
 
 ### Duplicate Feedback
@@ -299,6 +355,9 @@ gh api repos/$REPO/pulls/$PR/comments \
 **"Review suggestion broke working code"**
 → Never trust suggestions blindly. Verify the issue exists, evaluate the fix, and test before committing. Review bots frequently hallucinate problems or suggest incorrect fixes.
 
+**"No feedback on PR — all three channels empty"**
+→ Agents haven't reviewed yet. Run `~/.claude/skills/pr-review/scripts/invoke-review-agents.sh` to trigger them, then wait and re-check.
+
 **"Committed before checking latest feedback"**
 → Run feedback check script immediately before declaring PR "ready" or "complete."
 
@@ -311,6 +370,7 @@ gh api repos/$REPO/pulls/$PR/comments \
 3. Any reviewer (human, bot, agent) can post in any channel
 4. One Fix Report per round
 5. Tag all reviewers explicitly
+6. If no feedback exists, invoke agents first — never declare a PR complete without at least one review round
 
 **Most common mistakes:**
 ❌ Only checking conversation or `gh pr view`

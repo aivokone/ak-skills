@@ -101,6 +101,29 @@ Real-world examples of Fix Reports from code review scenarios with multiple revi
 @gemini-code-assist please re-review. Note: Future reviews - conversation comments preferred for easier tracking per workflow docs.
 ```
 
+## Example 7: Loop Mode Fix Report
+
+Shows the re-invocation footer and inline-reply @-tagging used in loop mode.
+
+```markdown
+### Fix Report — Round 2
+
+**Addressed Gemini inline comments:**
+- api.ts:L20 (return type): FIXED @ f1a2b3c — verified: `tsc --noEmit` passes
+  - Inline reply posted, tagged @gemini-code-assist
+
+**Addressed CodeRabbit conversation comment:**
+- api.ts:L55 (error boundary): FIXED @ f1a2b3c — verified: error throws caught by test suite
+
+**Note:** Replied to inline threads:
+- L20: https://github.com/org/repo/pull/5#discussion_r234567890
+
+Re-invoking review agents for next round.
+```
+
+*(In loop mode, inline replies are signed with agent identity and @-tag the reviewer:*
+*`Fixed @ f1a2b3c. —Claude Sonnet 4.6 | addressed @gemini-code-assist feedback`)*
+
 ## Status Reference
 
 | Status   | Required Info | When to Use |
