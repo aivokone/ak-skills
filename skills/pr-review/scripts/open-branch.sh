@@ -24,8 +24,13 @@ fi
 # --- On main/master: create and switch to new branch ---
 NEW_BRANCH="${1:-review-loop-$(date +%Y%m%d-%H%M%S)}"
 
-echo "On $BRANCH — creating branch $NEW_BRANCH..."
-git checkout -b "$NEW_BRANCH"
+if git show-ref --verify --quiet refs/heads/"$NEW_BRANCH"; then
+  echo "On $BRANCH — switching to existing branch $NEW_BRANCH..."
+  git checkout "$NEW_BRANCH"
+else
+  echo "On $BRANCH — creating branch $NEW_BRANCH..."
+  git checkout -b "$NEW_BRANCH"
+fi
 git push -u origin "$NEW_BRANCH"
 
 echo "$NEW_BRANCH"

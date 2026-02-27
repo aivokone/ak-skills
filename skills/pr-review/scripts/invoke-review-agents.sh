@@ -161,7 +161,12 @@ if [ -n "$MENTION_LINE" ]; then
   BODY="${MENTION_LINE}please review this PR."
 fi
 if [ -n "$EXTRA_LINES" ]; then
-  BODY="${BODY}${EXTRA_LINES}"
+  # EXTRA_LINES has a leading newline; strip it when BODY is empty
+  if [ -n "$BODY" ]; then
+    BODY="${BODY}${EXTRA_LINES}"
+  else
+    BODY="${EXTRA_LINES:1}"
+  fi
 fi
 
 if $FORMAT_ONLY; then
