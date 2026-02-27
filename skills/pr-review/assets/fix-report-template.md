@@ -22,7 +22,8 @@
 **Note:** Replied to inline threads:
 - L10: [inline-thread-url]
 
-@chatgpt-codex-connector @gemini-code-assist @coderabbitai please re-review.
+@chatgpt-codex-connector @gemini-code-assist please re-review.
+@coderabbitai review
 
 ---
 

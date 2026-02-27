@@ -339,7 +339,7 @@ Activate when the user's prompt requests a review loop, review cycle, or similar
 7. **Commit** — `commit-and-push.sh -m "fix: address review feedback round N"`
 8. **Reply inline** — `reply-to-inline.sh` for each inline comment; sign with agent identity; tag the reviewer's `@github-user`
 9. **Fix Report** — `post-fix-report.sh $PR /tmp/fix-report.md`
-   - Before max: footer has `@chatgpt-codex-connector @gemini-code-assist @coderabbitai please re-review.`
+   - Before max: footer has @-mentions + `@coderabbitai review` on its own line
    - At max: footer has max-reached message (see below)
 10. **Loop** — if `ROUND < MAX_ROUNDS`, go to step 2
 

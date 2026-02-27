@@ -118,7 +118,8 @@ Shows the @-mention footer used in loop mode to trigger re-review from all agent
 **Note:** Replied to inline threads:
 - L20: https://github.com/org/repo/pull/5#discussion_r234567890
 
-@chatgpt-codex-connector @gemini-code-assist @coderabbitai please re-review.
+@chatgpt-codex-connector @gemini-code-assist please re-review.
+@coderabbitai review
 ```
 
 *(In loop mode, inline replies are signed with agent identity and @-tag the reviewer:*

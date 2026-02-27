@@ -122,15 +122,22 @@ else
   SELECTED=("${AGENT_SLUGS[@]}")
 fi
 
-# Build combined @-mention string from selected agents
-MENTIONS=""
+# Build combined comment body from selected agents
+# Most agents trigger on any @-mention; CodeRabbit requires "@coderabbitai review" exactly.
+MENTION_LINE=""
+EXTRA_LINES=""
 INVOKED=0
 for slug in "${SELECTED[@]}"; do
   slug="${slug// /}"  # trim any whitespace
   user=$(slug_to_user "$slug") || continue
-  MENTIONS="${MENTIONS}@${user} "
   INVOKED=$((INVOKED + 1))
   echo "  Including ${slug} (@${user})"
+  if [ "$slug" = "coderabbit" ]; then
+    EXTRA_LINES="${EXTRA_LINES}
+@${user} review"
+  else
+    MENTION_LINE="${MENTION_LINE}@${user} "
+  fi
 done
 
 if [ "$INVOKED" -eq 0 ]; then
@@ -139,7 +146,13 @@ if [ "$INVOKED" -eq 0 ]; then
 fi
 
 # Post ONE combined comment
-BODY="${MENTIONS}please review this PR."
+BODY=""
+if [ -n "$MENTION_LINE" ]; then
+  BODY="${MENTION_LINE}please review this PR."
+fi
+if [ -n "$EXTRA_LINES" ]; then
+  BODY="${BODY}${EXTRA_LINES}"
+fi
 echo ""
 echo "Posting combined trigger comment..."
 gh pr comment "$PR" --repo "$REPO" --body "$BODY" | cat
