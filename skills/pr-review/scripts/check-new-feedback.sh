@@ -74,15 +74,13 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📝 NEW CONVERSATION COMMENTS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-COMMENTS=$(gh api "repos/$REPO/issues/$PR/comments?since=$SINCE" \
-  --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")] | .[] | \"[\(.id)] [\(.user.login)] \(.created_at | split(\"T\")[0])\n\(.body)\n---\"" 2>/dev/null || echo "")
-CONV_COUNT=0
-if [ -z "$COMMENTS" ]; then
+RAW_COMMENTS=$(gh api --paginate "repos/$REPO/issues/$PR/comments?since=$SINCE" \
+  --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")]" 2>/dev/null || echo "[]")
+CONV_COUNT=$(echo "$RAW_COMMENTS" | jq 'length' 2>/dev/null || echo "0")
+if [ "$CONV_COUNT" -eq 0 ]; then
   echo "None"
 else
-  printf "%s\n" "$COMMENTS"
-  CONV_COUNT=$(gh api "repos/$REPO/issues/$PR/comments?since=$SINCE" \
-    --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")] | length" 2>/dev/null || echo "0")
+  echo "$RAW_COMMENTS" | jq -r '.[] | "[\(.id)] [\(.user.login)] \(.created_at | split("T")[0])\n\(.body)\n---"'
 fi
 
 # --- Inline comments ---
@@ -90,15 +88,13 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "💬 NEW INLINE COMMENTS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-INLINE=$(gh api "repos/$REPO/pulls/$PR/comments?since=$SINCE" \
-  --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")] | .[] | \"[\(.id)] \(.path):\(.line // .original_line) [\(.user.login)]\n\(.body)\n---\"" 2>/dev/null || echo "")
-INLINE_COUNT=0
-if [ -z "$INLINE" ]; then
+RAW_INLINE=$(gh api --paginate "repos/$REPO/pulls/$PR/comments?since=$SINCE" \
+  --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")]" 2>/dev/null || echo "[]")
+INLINE_COUNT=$(echo "$RAW_INLINE" | jq 'length' 2>/dev/null || echo "0")
+if [ "$INLINE_COUNT" -eq 0 ]; then
   echo "None"
 else
-  printf "%s\n" "$INLINE"
-  INLINE_COUNT=$(gh api "repos/$REPO/pulls/$PR/comments?since=$SINCE" \
-    --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")] | length" 2>/dev/null || echo "0")
+  echo "$RAW_INLINE" | jq -r '.[] | "[\(.id)] \(.path):\(.line // .original_line) [\(.user.login)]\n\(.body)\n---"'
 fi
 
 # --- Reviews ---
@@ -106,15 +102,13 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ NEW REVIEWS (state + body)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-REVIEWS=$(gh api "repos/$REPO/pulls/$PR/reviews" \
-  --jq "[.[] | select(.user.login != \"$SELF\") | select(.submitted_at > \"$SINCE\")] | .[] | \"[\(.id)] \(.state) [\(.user.login)] \(.submitted_at | split(\"T\")[0])\n\(.body // \"No body\")\n---\"" 2>/dev/null || echo "")
-REV_COUNT=0
-if [ -z "$REVIEWS" ]; then
+RAW_REVIEWS=$(gh api --paginate "repos/$REPO/pulls/$PR/reviews" \
+  --jq "[.[] | select(.user.login != \"$SELF\") | select(.submitted_at > \"$SINCE\")]" 2>/dev/null || echo "[]")
+REV_COUNT=$(echo "$RAW_REVIEWS" | jq 'length' 2>/dev/null || echo "0")
+if [ "$REV_COUNT" -eq 0 ]; then
   echo "None"
 else
-  printf "%s\n" "$REVIEWS"
-  REV_COUNT=$(gh api "repos/$REPO/pulls/$PR/reviews" \
-    --jq "[.[] | select(.user.login != \"$SELF\") | select(.submitted_at > \"$SINCE\")] | length" 2>/dev/null || echo "0")
+  echo "$RAW_REVIEWS" | jq -r '.[] | "[\(.id)] \(.state) [\(.user.login)] \(.submitted_at | split("T")[0])\n\(.body // "No body")\n---"'
 fi
 
 # --- Summary ---

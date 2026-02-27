@@ -93,7 +93,7 @@ if [ -n "$BODY" ]; then
   CREATE_ARGS+=(--body "$BODY")
 fi
 
-PR_URL=$("${CREATE_ARGS[@]}" 2>&1)
-PR_NUM=$(gh pr view --json number -q .number 2>/dev/null || echo "")
+PR_URL=$("${CREATE_ARGS[@]}")
+PR_NUM=${PR_URL##*/}
 
 echo "PR #$PR_NUM $PR_URL"

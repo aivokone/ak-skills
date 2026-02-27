@@ -95,21 +95,21 @@ ELAPSED=0
 check_new_feedback() {
   local count=0
 
-  # Conversation comments (since parameter is native)
+  # Conversation comments (since parameter is native; paginate for completeness)
   local conv
-  conv=$(gh api "repos/$REPO/issues/$PR/comments?since=$SINCE" \
+  conv=$(gh api --paginate "repos/$REPO/issues/$PR/comments?since=$SINCE" \
     --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")] | length" 2>/dev/null || echo "0")
   count=$((count + conv))
 
-  # Inline comments (since parameter is native)
+  # Inline comments (since parameter is native; paginate for completeness)
   local inl
-  inl=$(gh api "repos/$REPO/pulls/$PR/comments?since=$SINCE" \
+  inl=$(gh api --paginate "repos/$REPO/pulls/$PR/comments?since=$SINCE" \
     --jq "[.[] | select(.user.login != \"$SELF\") | select(.created_at > \"$SINCE\")] | length" 2>/dev/null || echo "0")
   count=$((count + inl))
 
-  # Reviews (no native since — filter with jq)
+  # Reviews (no native since — filter with jq; paginate)
   local rev
-  rev=$(gh api "repos/$REPO/pulls/$PR/reviews" \
+  rev=$(gh api --paginate "repos/$REPO/pulls/$PR/reviews" \
     --jq "[.[] | select(.user.login != \"$SELF\") | select(.submitted_at > \"$SINCE\")] | length" 2>/dev/null || echo "0")
   count=$((count + rev))
 
@@ -125,8 +125,11 @@ while [ "$ELAPSED" -lt "$TIMEOUT" ]; do
   fi
 
   echo "[${ELAPSED}s] Waiting for reviews..."
-  sleep "$INTERVAL"
-  ELAPSED=$((ELAPSED + INTERVAL))
+  # Cap sleep to remaining time so we never exceed the timeout
+  REMAINING=$((TIMEOUT - ELAPSED))
+  SLEEP_FOR=$((INTERVAL < REMAINING ? INTERVAL : REMAINING))
+  sleep "$SLEEP_FOR"
+  ELAPSED=$((ELAPSED + SLEEP_FOR))
 done
 
 echo ""
