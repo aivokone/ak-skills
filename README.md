@@ -192,6 +192,7 @@ Includes helper scripts (relative to skill directory):
 
 - `scripts/check-pr-feedback.sh` — check all three feedback channels for a PR
 - `scripts/reply-to-inline.sh` — reply in-thread to inline comments
+- `scripts/post-fix-report.sh` — post Fix Report as a PR conversation comment
 
 Source:
 - `skills/pr-review/SKILL.md`

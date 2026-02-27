@@ -23,7 +23,8 @@
     "expectations": [
       "Shows Fix Report format with statuses: FIXED, WONTFIX, DEFERRED, QUESTION",
       "FIXED includes commit hash and verification",
-      "Mentions posting as ONE conversation comment and tagging all reviewers"
+      "Mentions posting as ONE conversation comment and tagging all reviewers",
+      "Uses post-fix-report.sh script to post the comment rather than raw gh pr comment"
     ]
   },
   {
