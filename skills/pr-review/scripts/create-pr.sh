@@ -100,6 +100,10 @@ fi
 # --- Check for existing PR ---
 EXISTING_URL=$(gh pr view --json url --jq '.url' 2>/dev/null || echo "")
 if [ -n "$EXISTING_URL" ]; then
+  # Cleanup scratch file even on idempotent exit (body was already read)
+  if [ -n "$_SCRATCH_FILE" ] && [[ "$_SCRATCH_FILE" != *".."* ]]; then
+    rm -f -- "$_SCRATCH_FILE"
+  fi
   echo "EXISTS: $EXISTING_URL"
   exit 0
 fi
