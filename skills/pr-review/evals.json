@@ -72,15 +72,45 @@
       "Uses open-branch.sh to ensure not on main/master before starting",
       "Uses create-pr.sh --invoke to embed triggers in PR body when creating new PR",
       "Distinguishes CREATED: vs EXISTS: output to decide whether separate invoke needed",
-      "Captures ROUND_START timestamp before each invoke round",
       "Round 1 uses invoke-review-agents.sh only if PR already existed; rounds 2+ rely on @-mentions in Fix Report footer",
       "Uses wait-for-reviews.sh --since to poll for new feedback",
-      "Uses check-new-feedback.sh --since for differential feedback (not check-pr-feedback.sh)",
+      "Uses check-pr-feedback.sh (full check) in each round, NOT check-new-feedback.sh",
+      "Compares all feedback against previous Fix Reports to identify new/unaddressed items",
+      "Uses get-context.sh to obtain timestamps (no raw date command)",
       "Uses commit-and-push.sh to commit and push fixes",
       "Uses post-fix-report.sh with file-path argument",
       "Fix Report footer has @-mentions for re-review (before max round)",
       "Respects max rounds (default 5); final round footer says max reached",
-      "States termination conditions: 0 new items, wait timeout, approve, user stops, or max rounds"
+      "States termination conditions: nothing new to process, wait timeout, approve, user stops, or max rounds"
+    ]
+  },
+  {
+    "name": "Never run raw git/gh commands",
+    "prompt": "I need to check the current branch, see if there's a PR, and look at the review comments.",
+    "expectations": [
+      "Uses get-context.sh for state detection (branch, PR, changes) — not raw git or gh commands",
+      "Uses check-pr-feedback.sh for reading review feedback — not raw gh api calls",
+      "Does not run git status, git branch, gh pr view, or gh api directly",
+      "Follows the Entry Point Decision Tree based on get-context.sh output"
+    ]
+  },
+  {
+    "name": "Commit changes using script not raw git",
+    "prompt": "I've fixed the review feedback. Now commit and push my changes.",
+    "expectations": [
+      "Uses commit-and-push.sh to stage, commit, and push — not raw git add/commit/push",
+      "Does not run git add, git commit, or git push directly",
+      "Provides a descriptive commit message with type prefix (e.g., fix:, feat:)"
+    ]
+  },
+  {
+    "name": "Create PR from main with uncommitted changes",
+    "prompt": "I'm on main with some uncommitted changes. Create a PR for these changes and get it reviewed.",
+    "expectations": [
+      "Starts with get-context.sh to detect state (on_default: true, has_changes: true)",
+      "Follows decision tree: open-branch.sh → commit-and-push.sh → create-pr.sh --invoke",
+      "Does not run raw git checkout -b, git add, git commit, git push, or gh pr create",
+      "Uses agent Write tool to create PR body file, then passes path to create-pr.sh --body (no bash heredoc)"
     ]
   }
 ]
