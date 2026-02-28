@@ -54,7 +54,7 @@ if [ $# -gt 0 ]; then
   BODY=$(cat "$FILE_PATH")
   # Auto-cleanup scratch files to avoid overwrite permission prompts
   case "$FILE_PATH" in
-    */.agents/scratch/*) rm -f "$FILE_PATH" ;;
+    .agents/scratch/*|*/.agents/scratch/*) rm -f "$FILE_PATH" ;;
   esac
 elif [ ! -t 0 ]; then
   BODY=$(cat)

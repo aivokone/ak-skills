@@ -49,7 +49,7 @@ while [ $# -gt 0 ]; do
       if [ -f "$2" ]; then
         BODY=$(cat "$2")
         # Auto-cleanup scratch files to avoid overwrite permission prompts
-        case "$2" in */.agents/scratch/*) rm -f "$2" ;; esac
+        case "$2" in .agents/scratch/*|*/.agents/scratch/*) rm -f "$2" ;; esac
       else
         BODY="$2"
       fi
@@ -60,7 +60,7 @@ while [ $# -gt 0 ]; do
       if [ -f "$_val" ]; then
         BODY=$(cat "$_val")
         # Auto-cleanup scratch files to avoid overwrite permission prompts
-        case "$_val" in */.agents/scratch/*) rm -f "$_val" ;; esac
+        case "$_val" in .agents/scratch/*|*/.agents/scratch/*) rm -f "$_val" ;; esac
       else
         BODY="$_val"
       fi
