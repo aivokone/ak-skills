@@ -50,7 +50,10 @@ if [ -n "$STAGED" ] || [ -n "$UNSTAGED" ] || [ -n "$UNTRACKED" ]; then
   PARTS=()
   STAGED_COUNT=$(git diff --cached --numstat 2>/dev/null | wc -l | tr -d ' ')
   UNSTAGED_COUNT=$(git diff --numstat 2>/dev/null | wc -l | tr -d ' ')
-  UNTRACKED_COUNT=$(echo "$UNTRACKED" | grep -c . 2>/dev/null || echo "0")
+  UNTRACKED_COUNT=0
+  if [ -n "$UNTRACKED" ]; then
+    UNTRACKED_COUNT=$(echo "$UNTRACKED" | wc -l | tr -d ' ')
+  fi
   [ "$STAGED_COUNT" -gt 0 ] 2>/dev/null && PARTS+=("${STAGED_COUNT} staged")
   [ "$UNSTAGED_COUNT" -gt 0 ] 2>/dev/null && PARTS+=("${UNSTAGED_COUNT} modified")
   [ "$UNTRACKED_COUNT" -gt 0 ] 2>/dev/null && PARTS+=("${UNTRACKED_COUNT} untracked")
@@ -67,12 +70,10 @@ if command -v gh &>/dev/null; then
   # Repo (1 API call)
   REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")
 
-  # PR for current branch (1 API call)
-  PR_JSON=$(gh pr view --json number,url,state 2>/dev/null || echo "")
-  if [ -n "$PR_JSON" ]; then
-    PR_NUMBER=$(echo "$PR_JSON" | grep -o '"number":[0-9]*' | grep -o '[0-9]*' || echo "")
-    PR_URL=$(echo "$PR_JSON" | grep -o '"url":"[^"]*"' | sed 's/"url":"//;s/"//' || echo "")
-    PR_STATE=$(echo "$PR_JSON" | grep -o '"state":"[^"]*"' | sed 's/"state":"//;s/"//' || echo "")
+  # PR for current branch (1 API call, using --jq with @tsv for robust parsing)
+  PR_DATA=$(gh pr view --json number,url,state --jq '[.number, .url, .state] | @tsv' 2>/dev/null || echo "")
+  if [ -n "$PR_DATA" ]; then
+    IFS=$'\t' read -r PR_NUMBER PR_URL PR_STATE <<< "$PR_DATA"
   fi
 fi
 
