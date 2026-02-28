@@ -73,8 +73,8 @@ echo "Posting Fix Report to PR #$PR in $REPO..."
 gh pr comment "$PR" --repo "$REPO" --body "$BODY"
 
 # Auto-cleanup scratch files after successful post (avoids overwrite permission prompts)
-if [ -n "${FILE_PATH:-}" ]; then
+if [ -n "${FILE_PATH:-}" ] && [[ "$FILE_PATH" != *".."* ]]; then
   case "$FILE_PATH" in
-    .agents/scratch/*|*/.agents/scratch/*) rm -f "$FILE_PATH" ;;
+    .agents/scratch/*|*/.agents/scratch/*) rm -f -- "$FILE_PATH" ;;
   esac
 fi

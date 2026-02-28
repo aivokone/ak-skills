@@ -139,8 +139,8 @@ fi
 PR_URL=$("${CREATE_ARGS[@]}")
 
 # Auto-cleanup scratch file after successful creation (avoids overwrite permission prompts)
-if [ -n "$_SCRATCH_FILE" ]; then
-  rm -f "$_SCRATCH_FILE"
+if [ -n "$_SCRATCH_FILE" ] && [[ "$_SCRATCH_FILE" != *".."* ]]; then
+  rm -f -- "$_SCRATCH_FILE"
 fi
 
 echo "CREATED: $PR_URL"
