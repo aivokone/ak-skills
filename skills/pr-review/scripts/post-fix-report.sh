@@ -52,10 +52,6 @@ if [ $# -gt 0 ]; then
     exit 1
   fi
   BODY=$(cat "$FILE_PATH")
-  # Auto-cleanup scratch files to avoid overwrite permission prompts
-  case "$FILE_PATH" in
-    .agents/scratch/*|*/.agents/scratch/*) rm -f "$FILE_PATH" ;;
-  esac
 elif [ ! -t 0 ]; then
   BODY=$(cat)
 else
@@ -75,3 +71,10 @@ fi
 echo "Posting Fix Report to PR #$PR in $REPO..."
 
 gh pr comment "$PR" --repo "$REPO" --body "$BODY"
+
+# Auto-cleanup scratch files after successful post (avoids overwrite permission prompts)
+if [ -n "${FILE_PATH:-}" ]; then
+  case "$FILE_PATH" in
+    .agents/scratch/*|*/.agents/scratch/*) rm -f "$FILE_PATH" ;;
+  esac
+fi

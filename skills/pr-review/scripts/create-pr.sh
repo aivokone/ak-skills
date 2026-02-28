@@ -26,6 +26,7 @@ fi
 TITLE=""
 BODY=""
 INVOKE=false
+_SCRATCH_FILE=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -48,8 +49,8 @@ while [ $# -gt 0 ]; do
       fi
       if [ -f "$2" ]; then
         BODY=$(cat "$2")
-        # Auto-cleanup scratch files to avoid overwrite permission prompts
-        case "$2" in .agents/scratch/*|*/.agents/scratch/*) rm -f "$2" ;; esac
+        # Remember scratch file for cleanup after successful PR creation
+        case "$2" in .agents/scratch/*|*/.agents/scratch/*) _SCRATCH_FILE="$2" ;; esac
       else
         BODY="$2"
       fi
@@ -59,8 +60,8 @@ while [ $# -gt 0 ]; do
       _val="${1#--body=}"
       if [ -f "$_val" ]; then
         BODY=$(cat "$_val")
-        # Auto-cleanup scratch files to avoid overwrite permission prompts
-        case "$_val" in .agents/scratch/*|*/.agents/scratch/*) rm -f "$_val" ;; esac
+        # Remember scratch file for cleanup after successful PR creation
+        case "$_val" in .agents/scratch/*|*/.agents/scratch/*) _SCRATCH_FILE="$_val" ;; esac
       else
         BODY="$_val"
       fi
@@ -136,5 +137,10 @@ if [ -n "$BODY" ]; then
 fi
 
 PR_URL=$("${CREATE_ARGS[@]}")
+
+# Auto-cleanup scratch file after successful creation (avoids overwrite permission prompts)
+if [ -n "$_SCRATCH_FILE" ]; then
+  rm -f "$_SCRATCH_FILE"
+fi
 
 echo "CREATED: $PR_URL"
