@@ -38,11 +38,11 @@ Run `get-context.sh` first. Based on its output, follow the matching path:
 
 | `on_default` | `has_changes` | `pr_number` | Action sequence |
 |---|---|---|---|
-| `true` | `true` | empty | `open-branch.sh` → `commit-and-push.sh` → `create-pr.sh --invoke` |
+| `true` | `true` | empty | `open-branch.sh` → `commit-and-push.sh` → `create-pr.sh --invoke --title "..."` |
 | `true` | `false` | empty | Ask user what to do (no changes to work with) |
 | `false` | any | has number | `check-pr-feedback.sh` (existing PR — review cycle) |
-| `false` | `true` | empty | `commit-and-push.sh` → `create-pr.sh --invoke` |
-| `false` | `false` | empty | `create-pr.sh --invoke` (branch exists, already pushed) |
+| `false` | `true` | empty | `commit-and-push.sh` → `create-pr.sh --invoke --title "..."` |
+| `false` | `false` | empty | `create-pr.sh --invoke --title "..."` (branch exists, already pushed) |
 
 For loop mode, see the Loop Mode section — the decision tree gets you started, then the loop takes over.
 
