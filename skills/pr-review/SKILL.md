@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Use FIRST for any PR/code review work — checking feedback, reading CR comments, responding to reviewers, addressing review bot or human comments, or preparing commits on a PR. Collects feedback from ALL sources (conversation, inline, reviews) to prevent the common failure of missing inline feedback. Start with check-pr-feedback.sh, then reply inline where needed and summarize with one Fix Report.
+description: Use FIRST for any PR/code review work — checking feedback, reading CR comments, responding to reviewers, addressing review bot or human comments, or preparing commits on a PR. Collects feedback from ALL sources (conversation, inline, reviews) to prevent the common failure of missing inline feedback. Start with get-context.sh for state detection, then follow the Decision Tree. All operations through provided scripts — never raw git/gh commands.
 ---
 
 # PR Review Workflow
@@ -11,6 +11,41 @@ Systematic workflow for checking, responding to, and reporting on PR feedback fr
 
 **Key insight:** PR feedback arrives through three different channels (conversation comments, inline threads, review submissions). Missing any channel means missing feedback. This skill ensures all channels are checked systematically.
 
+## Self-Contained Constraint
+
+**ALL operations MUST go through the provided scripts.** Never run raw `git`, `gh`, `date`, or bash heredocs (`cat > file << 'EOF'`) when a script or agent tool covers the same operation.
+
+| Instead of (prohibited) | Use |
+|---|---|
+| `git status`, `git branch`, `gh pr view`, `gh repo view` | `get-context.sh` |
+| `git add`, `git commit`, `git push` | `commit-and-push.sh` |
+| `git checkout -b`, `git switch -c` | `open-branch.sh` |
+| `gh pr create` | `create-pr.sh` |
+| `gh api repos/.../comments`, `gh pr view --json` | `check-pr-feedback.sh` |
+| `gh api ... -f body=` (posting comments) | `post-fix-report.sh` or `reply-to-inline.sh` |
+| `date -u +%Y-%m-%dT%H:%M:%SZ` | `get-context.sh` (outputs `timestamp:` field) |
+| `cat > /tmp/file.md << 'EOF'` (bash heredoc) | Agent's native Write tool, then pass file path to script |
+
+**Entry point:** Always start with `get-context.sh` to detect current state. Use its output to decide next steps via the Decision Tree below.
+
+**File creation:** When a script accepts a file path (e.g., `create-pr.sh --body`, `post-fix-report.sh`), write the file using the agent's native Write tool, then pass the path to the script. Never use bash heredocs to create temp files.
+
+**Acceptable raw commands:** Project-specific test/build commands (`npm test`, `pytest`, `make build`, etc.) are fine — these are not PR workflow operations.
+
+## Entry Point Decision Tree
+
+Run `get-context.sh` first. Based on its output, follow the matching path:
+
+| `on_default` | `has_changes` | `pr_number` | Action sequence |
+|---|---|---|---|
+| `true` | `true` | empty | `open-branch.sh` → `commit-and-push.sh` → `create-pr.sh --invoke` |
+| `true` | `false` | empty | Ask user what to do (no changes to work with) |
+| `false` | any | has number | `check-pr-feedback.sh` (existing PR — review cycle) |
+| `false` | `true` | empty | `commit-and-push.sh` → `create-pr.sh --invoke` |
+| `false` | `false` | empty | `create-pr.sh --invoke` (branch exists, already pushed) |
+
+For loop mode, see the Loop Mode section — the decision tree gets you started, then the loop takes over.
+
 ## Quick Commands
 
 **Script path resolution:** Before running any script, determine the correct base path. Check in this order:
@@ -18,6 +53,14 @@ Systematic workflow for checking, responding to, and reporting on PR feedback fr
 2. Other global paths by preference of the agent
 
 Use whichever path exists. Script paths below use the global form; substitute accordingly for your agent or install method.
+
+### Get Context (Entry Point)
+
+```bash
+~/.claude/skills/pr-review/scripts/get-context.sh
+```
+
+Outputs key-value pairs: `branch`, `on_default`, `has_changes`, `change_summary`, `pr_number`, `pr_url`, `pr_state`, `timestamp`, `repo`. Use `timestamp` for `wait-for-reviews.sh --since`. Gracefully handles missing `gh` (empty PR/repo fields). Exits 1 only on detached HEAD or not in a git repo.
 
 ### Open Branch (Idempotent)
 
@@ -122,53 +165,24 @@ Like `check-pr-feedback.sh` but only shows feedback created after `TIMESTAMP`, e
 
 ## Commit Workflows
 
-### Quick Commit (No Approval)
-
-Allowed when:
-- Not on `main`/`master`
-- No `--force` needed
-- Changes clearly scoped
+Always use `commit-and-push.sh` for committing. It stages all changes, commits, pushes, and enforces branch safety (refuses `main`/`master`, never force-pushes).
 
 ```bash
-git add -A
-git commit -m "<type>: <outcome>"
-git push  # if requested
+~/.claude/skills/pr-review/scripts/commit-and-push.sh -m "<type>: <outcome>"
 ```
 
+### Commit Type Conventions
+
 Types: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`
-
-### Safe Commit (With Inspection)
-
-Required for `main`/`master` or ambiguous changes:
-
-1. Inspect: `git status --porcelain && git diff --stat`
-2. Wait for approval if ambiguous
-3. Stage selectively: `git add -A` or `git add -p <files>`
-4. Commit: `git commit -m "<type>: <outcome>"`
-5. Push (never `--force`)
-6. Report: branch, commit hash, pushed (yes/no)
 
 ### Self-Check Before Commit
 
 Before committing, verify:
 
-1. **Test changes** - If modifying working code based on suggestions, test first
-2. **Check latest feedback** - Run feedback check script to catch new comments
-3. **User confirmation** - If user is active in session, ask before committing
-4. **Verify claims** - If Fix Report says "verified:", actually verify
-
-Example check:
-
-```bash
-# 1. Test changes (run project-specific tests)
-npm test  # or: pytest, go test, etc.
-
-# 2. Check for new feedback since last check (use ROUND_START from loop)
-~/.claude/skills/pr-review/scripts/check-new-feedback.sh --since "$ROUND_START"
-# (prevents "ready to merge" when new comments exist)
-
-# 3. If user active: "Ready to commit these changes?"
-```
+1. **Test changes** — Run project-specific tests (`npm test`, `pytest`, etc.) if modifying working code
+2. **Check latest feedback** — Run `check-pr-feedback.sh` to catch any new comments
+3. **User confirmation** — If user is active in session, ask before committing
+4. **Verify claims** — If Fix Report says "verified:", actually verify
 
 ## PR Creation
 
@@ -263,17 +277,21 @@ Run `invoke-review-agents.sh` when `check-pr-feedback.sh` returns empty output f
 
 After addressing feedback, **always** post ONE conversation comment (Fix Report). This is separate from requesting re-review — the Fix Report documents what was done, even if no re-review is needed.
 
-Use the script to post it:
+Write the report with the agent's Write tool (e.g., to `/tmp/fix-report.md`), then post it:
 
 ```bash
-cat <<'EOF' | ~/.claude/skills/pr-review/scripts/post-fix-report.sh
+~/.claude/skills/pr-review/scripts/post-fix-report.sh /tmp/fix-report.md
+```
+
+Fix Report format:
+
+```markdown
 ### Fix Report
 
 - [file.ext:L10 Symbol]: FIXED @ abc123 — verified: `npm test` passes
 - [file.ext:L42 fn]: WONTFIX — reason: intentional per AGENTS.md
 - [file.ext:L100 class]: DEFERRED — tracking: #123
 - [file.ext:L200 method]: QUESTION — Should this handle X?
-EOF
 ```
 
 Optionally, if re-review is needed, add `@reviewer-username please re-review.` at the end of the body.
@@ -338,21 +356,23 @@ Activate when the user's prompt requests a review loop, review cycle, or similar
 **Loop workflow:**
 
 0. **Branch** — `open-branch.sh` (idempotent — creates branch if on main/master)
-1. **PR** — `create-pr.sh --invoke --title "..." --body /tmp/pr-body.md` — capture output prefix (`CREATED:` / `EXISTS:`)
-2. **Timestamp** — capture `ROUND_START=$(date -u +%Y-%m-%dT%H:%M:%SZ); ROUND=$((ROUND+1))`
-3. **Invoke** — Round 1: if step 1 output `CREATED:`, skip (triggers in PR body). If `EXISTS:`, run `invoke-review-agents.sh`. Rounds 2+: agents triggered by @-mentions in previous Fix Report footer (no separate invoke step)
-4. **Wait** — `wait-for-reviews.sh --since $ROUND_START` (polls until new feedback or timeout)
-5. **Check** — `check-new-feedback.sh --since $ROUND_START` (shows only new items)
-6. **Fix** — address all new feedback (critically evaluate each item first)
-7. **Commit** — `commit-and-push.sh -m "fix: address review feedback round N"`
-8. **Reply inline** — `reply-to-inline.sh` for each inline comment; sign with agent identity; tag the reviewer's `@github-user`
-9. **Fix Report** — `post-fix-report.sh $PR /tmp/fix-report.md`
+1. **PR** — `create-pr.sh --invoke --title "..." --body <path>` — write body with agent Write tool, pass path. Capture output prefix (`CREATED:` / `EXISTS:`)
+2. **Invoke** — Round 1: if step 1 output `CREATED:`, skip (triggers in PR body). If `EXISTS:`, run `invoke-review-agents.sh`. Rounds 2+: agents triggered by @-mentions in previous Fix Report footer (no separate invoke step)
+3. **Wait** — `wait-for-reviews.sh --since <timestamp>` — use `timestamp` from `get-context.sh` (run after last commit, or after step 1 for round 1). Polls until new feedback or timeout
+4. **Check** — `check-pr-feedback.sh` (ALL feedback, all channels)
+5. **Process** — compare all feedback against previous Fix Reports. Address only: (a) items not covered in any Fix Report, (b) items with new follow-up comments after the last Fix Report. Critically evaluate each item before fixing
+6. **Fix code, commit** — `commit-and-push.sh -m "fix: address review feedback round N"`
+7. **Get timestamp** — `get-context.sh` (capture `timestamp` for next wait step)
+8. **Reply inline** — `reply-to-inline.sh` for each addressed inline comment; sign with agent identity; tag the reviewer's `@github-user`
+9. **Fix Report** — write report with agent Write tool, then `post-fix-report.sh <PR> <path>`
    - Before max: footer has @-mentions + `@coderabbitai review` on its own line
    - At max: footer has max-reached message (see below)
-10. **Loop** — if `ROUND < MAX_ROUNDS`, go to step 2
+10. **Loop** — if `ROUND < MAX_ROUNDS`, go to step 3
+
+**Why full check instead of differential:** Using `check-new-feedback.sh --since` in the check step risks missing feedback that arrives during the fix phase (e.g., Gemini posts while agent is fixing Codex's comments). The full check + Fix Report comparison approach is gap-free.
 
 **Termination conditions** (any):
-- `check-new-feedback.sh` summary reports 0 new items across all channels
+- Step 5 finds nothing new to process (all feedback already addressed in Fix Reports)
 - `wait-for-reviews.sh` times out (no new feedback after invocation)
 - A reviewer posts an Approve review
 - User explicitly stops the loop
@@ -389,14 +409,10 @@ If multiple reviewers flag the same issue:
 
 ### Finding Comments by Reviewer
 
-```bash
-# Set REPO and PR for your context
-REPO="owner/repo"  # or: gh repo view --json nameWithOwner -q .nameWithOwner
-PR=42               # or: gh pr view --json number -q .number
+Use `check-pr-feedback.sh` — its output already includes `[user.login]` for every comment across all three channels. Filter the output for the reviewer you need:
 
-# Find comments by a specific reviewer (e.g., CodeRabbit, Gemini)
-gh api repos/$REPO/pulls/$PR/comments \
-  --jq '.[] | select(.user.login | contains("coderabbitai")) | {id, line, path, body}'
+```bash
+~/.claude/skills/pr-review/scripts/check-pr-feedback.sh | grep "coderabbitai"
 ```
 
 ## Troubleshooting

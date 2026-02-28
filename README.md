@@ -193,6 +193,7 @@ resolved.
 
 Includes helper scripts (relative to skill directory):
 
+- `scripts/get-context.sh` — current branch, PR, changes, timestamp (entry point for state detection)
 - `scripts/open-branch.sh` — ensure working tree is on a non-main branch (idempotent)
 - `scripts/check-pr-feedback.sh` — check all three feedback channels for a PR
 - `scripts/reply-to-inline.sh` — reply in-thread to inline comments
