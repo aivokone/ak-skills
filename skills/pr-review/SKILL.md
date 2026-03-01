@@ -89,9 +89,10 @@ If no PR number provided, detects current PR from branch.
 
 ```bash
 ~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> "Your message"
+~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> .agents/scratch/reply.md
 ```
 
-Replies in-thread to inline comments. Uses `-F` flag (not `--raw-field`) which properly handles numeric ID conversion in `gh` CLI.
+Replies in-thread to inline comments. Accepts message as inline text or a file path (auto-detects). Use file path when message contains `${...}` or other shell-sensitive syntax to avoid permission prompts. Uses `-F` flag (not `--raw-field`) which properly handles numeric ID conversion in `gh` CLI.
 
 **Must be run from repository root** with an active PR branch.
 
@@ -253,7 +254,10 @@ If a review comment is incorrect, respond with a clear explanation of why rather
 2. **Reply inline** to each comment (sign with agent identity):
 
 ```bash
+# Short messages — inline text:
 ~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> "Fixed @ abc123. [details] —[Your Agent Name]"
+# Messages with ${...} or shell-sensitive syntax — write to file first, pass path:
+~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> .agents/scratch/reply.md
 ```
 
 3. **Include in Fix Report** (conversation comment) — the Fix Report summarizes all changes, but inline replies ensure each comment gets a direct acknowledgment

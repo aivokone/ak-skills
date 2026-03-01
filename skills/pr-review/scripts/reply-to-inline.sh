@@ -1,6 +1,6 @@
 #!/bin/bash
 # Reply to an inline PR review comment
-# Usage: ./reply-to-inline.sh <COMMENT_ID> <MESSAGE>
+# Usage: ./reply-to-inline.sh <COMMENT_ID> <MESSAGE|FILE_PATH>
 #
 # Finds the PR automatically from current branch
 
@@ -24,6 +24,17 @@ fi
 COMMENT_ID="$1"
 shift
 MESSAGE="$*"
+
+# If MESSAGE is a .agents/scratch/ file, read content from it (restricted to scratch dir for safety)
+_MSG_FILE=""
+if [[ "$MESSAGE" != *".."* ]] && [ -f "$MESSAGE" ]; then
+  case "$MESSAGE" in
+    .agents/scratch/*|*/.agents/scratch/*)
+      _MSG_FILE="$MESSAGE"
+      MESSAGE=$(cat "$_MSG_FILE")
+      ;;
+  esac
+fi
 
 PR=$(gh pr view --json number -q .number 2>/dev/null || echo "")
 if [ -z "$PR" ]; then
@@ -51,3 +62,10 @@ gh api -X POST "repos/$REPO/pulls/$PR/comments" \
   -f body="$MESSAGE" \
   -F in_reply_to="$COMMENT_ID" \
   --jq '{url: .html_url, in_reply_to: .in_reply_to_id}'
+
+# Auto-cleanup scratch files after successful post (avoids overwrite permission prompts)
+if [ -n "$_MSG_FILE" ] && [[ "$_MSG_FILE" != *".."* ]]; then
+  case "$_MSG_FILE" in
+    .agents/scratch/*|*/.agents/scratch/*) rm -f -- "$_MSG_FILE" ;;
+  esac
+fi
