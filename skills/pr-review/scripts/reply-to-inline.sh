@@ -25,11 +25,15 @@ COMMENT_ID="$1"
 shift
 MESSAGE="$*"
 
-# If MESSAGE is a readable file, read content from it (supports .agents/scratch/ pattern)
+# If MESSAGE is a .agents/scratch/ file, read content from it (restricted to scratch dir for safety)
 _MSG_FILE=""
-if [ -f "$MESSAGE" ]; then
-  _MSG_FILE="$MESSAGE"
-  MESSAGE=$(cat "$_MSG_FILE")
+if [[ "$MESSAGE" != *".."* ]] && [ -f "$MESSAGE" ]; then
+  case "$MESSAGE" in
+    .agents/scratch/*|*/.agents/scratch/*)
+      _MSG_FILE="$MESSAGE"
+      MESSAGE=$(cat "$_MSG_FILE")
+      ;;
+  esac
 fi
 
 PR=$(gh pr view --json number -q .number 2>/dev/null || echo "")
