@@ -26,6 +26,7 @@ fi
 TITLE=""
 BODY=""
 INVOKE=false
+_SCRATCH_FILE=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -48,6 +49,8 @@ while [ $# -gt 0 ]; do
       fi
       if [ -f "$2" ]; then
         BODY=$(cat "$2")
+        # Remember scratch file for cleanup after successful PR creation
+        case "$2" in .agents/scratch/*|*/.agents/scratch/*) _SCRATCH_FILE="$2" ;; esac
       else
         BODY="$2"
       fi
@@ -57,6 +60,8 @@ while [ $# -gt 0 ]; do
       _val="${1#--body=}"
       if [ -f "$_val" ]; then
         BODY=$(cat "$_val")
+        # Remember scratch file for cleanup after successful PR creation
+        case "$_val" in .agents/scratch/*|*/.agents/scratch/*) _SCRATCH_FILE="$_val" ;; esac
       else
         BODY="$_val"
       fi
@@ -95,6 +100,10 @@ fi
 # --- Check for existing PR ---
 EXISTING_URL=$(gh pr view --json url --jq '.url' 2>/dev/null || echo "")
 if [ -n "$EXISTING_URL" ]; then
+  # Cleanup scratch file even on idempotent exit (body was already read)
+  if [ -n "$_SCRATCH_FILE" ] && [[ "$_SCRATCH_FILE" != *".."* ]]; then
+    rm -f -- "$_SCRATCH_FILE"
+  fi
   echo "EXISTS: $EXISTING_URL"
   exit 0
 fi
@@ -132,5 +141,10 @@ if [ -n "$BODY" ]; then
 fi
 
 PR_URL=$("${CREATE_ARGS[@]}")
+
+# Auto-cleanup scratch file after successful creation (avoids overwrite permission prompts)
+if [ -n "$_SCRATCH_FILE" ] && [[ "$_SCRATCH_FILE" != *".."* ]]; then
+  rm -f -- "$_SCRATCH_FILE"
+fi
 
 echo "CREATED: $PR_URL"

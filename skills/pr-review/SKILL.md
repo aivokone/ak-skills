@@ -24,11 +24,16 @@ Systematic workflow for checking, responding to, and reporting on PR feedback fr
 | `gh api repos/.../comments`, `gh pr view --json` | `check-pr-feedback.sh` |
 | `gh api ... -f body=` (posting comments) | `post-fix-report.sh` or `reply-to-inline.sh` |
 | `date -u +%Y-%m-%dT%H:%M:%SZ` | `get-context.sh` (outputs `timestamp:` field) |
-| `cat > /tmp/file.md << 'EOF'` (bash heredoc) | Agent's native Write tool, then pass file path to script |
+| `cat > file.md << 'EOF'` (bash heredoc) | Agent's native Write tool to `.agents/scratch/`, then pass file path to script |
 
 **Entry point:** Always start with `get-context.sh` to detect current state. Use its output to decide next steps via the Decision Tree below.
 
-**File creation:** When a script accepts a file path (e.g., `create-pr.sh --body`, `post-fix-report.sh`), write the file using the agent's native Write tool, then pass the path to the script. Never use bash heredocs to create temp files.
+**File creation:** When a script accepts a file path (e.g., `create-pr.sh --body`, `post-fix-report.sh`), write the file to `.agents/scratch/` using the agent's native Write tool, then pass the path to the script. Never use bash heredocs to create temp files.
+
+- **Directory:** `.agents/scratch/` — inside the repo, avoids out-of-tree write permission prompts
+- **Setup:** Run `mkdir -p .agents/scratch` before the first write if it doesn't exist
+- **Gitignore:** Ensure `.agents/` is in the project's `.gitignore`
+- **Cleanup:** Scripts auto-delete scratch files after reading them, so the file won't exist on subsequent runs (no overwrite prompts)
 
 **Acceptable raw commands:** Project-specific test/build commands (`npm test`, `pytest`, `make build`, etc.) are fine — these are not PR workflow operations.
 
@@ -103,7 +108,7 @@ Posts trigger comments to start agent reviews. Without `--agents`, invokes all k
 ### Post Fix Report
 
 ```bash
-~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER] /tmp/fix-report.md
+~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER] .agents/scratch/fix-report.md
 ```
 
 Or via stdin:
@@ -115,7 +120,7 @@ echo "$body" | ~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER]
 ### Create PR (Idempotent)
 
 ```bash
-~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body /tmp/pr-body.md [--invoke]
+~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body .agents/scratch/pr-body.md [--invoke]
 ```
 
 Or body as text string or via stdin:
@@ -277,10 +282,10 @@ Run `invoke-review-agents.sh` when `check-pr-feedback.sh` returns empty output f
 
 After addressing feedback, **always** post ONE conversation comment (Fix Report). This is separate from requesting re-review — the Fix Report documents what was done, even if no re-review is needed.
 
-Write the report with the agent's Write tool (e.g., to `/tmp/fix-report.md`), then post it:
+Write the report with the agent's Write tool (e.g., to `.agents/scratch/fix-report.md`), then post it:
 
 ```bash
-~/.claude/skills/pr-review/scripts/post-fix-report.sh /tmp/fix-report.md
+~/.claude/skills/pr-review/scripts/post-fix-report.sh .agents/scratch/fix-report.md
 ```
 
 Fix Report format:
