@@ -26,15 +26,10 @@ shift
 MESSAGE="$*"
 
 # If MESSAGE is a readable file, read content from it (supports .agents/scratch/ pattern)
+_MSG_FILE=""
 if [ -f "$MESSAGE" ]; then
   _MSG_FILE="$MESSAGE"
   MESSAGE=$(cat "$_MSG_FILE")
-  # Auto-cleanup scratch files
-  if [[ "$_MSG_FILE" != *".."* ]]; then
-    case "$_MSG_FILE" in
-      .agents/scratch/*|*/.agents/scratch/*) rm -f -- "$_MSG_FILE" ;;
-    esac
-  fi
 fi
 
 PR=$(gh pr view --json number -q .number 2>/dev/null || echo "")
@@ -63,3 +58,10 @@ gh api -X POST "repos/$REPO/pulls/$PR/comments" \
   -f body="$MESSAGE" \
   -F in_reply_to="$COMMENT_ID" \
   --jq '{url: .html_url, in_reply_to: .in_reply_to_id}'
+
+# Auto-cleanup scratch files after successful post (avoids overwrite permission prompts)
+if [ -n "$_MSG_FILE" ] && [[ "$_MSG_FILE" != *".."* ]]; then
+  case "$_MSG_FILE" in
+    .agents/scratch/*|*/.agents/scratch/*) rm -f -- "$_MSG_FILE" ;;
+  esac
+fi
