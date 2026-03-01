@@ -27,6 +27,14 @@ The table below is the canonical skills index for this repository.
 | [Local Reference](skills/local-ref/) | `local-ref` | Cache library docs locally so every session reads from disk instead of re-fetching |
 | [PR Review](skills/pr-review/) | `pr-review` | Systematic PR review workflow — check all feedback channels, respond, and report |
 
+## Agents Index
+
+Plugin-level sub-agents auto-discovered from `agents/`.
+
+| Name | Slug | Description |
+|------|------|-------------|
+| [PR Reviewer](agents/pr-reviewer.md) | `pr-reviewer` | Sonnet-powered sub-agent for the full PR review lifecycle |
+
 ## Skill Catalog
 
 ### Seravo Developer (`seravo-dev`)
@@ -231,6 +239,21 @@ similar).
 - When checking PR feedback, reviewing code review comments, or responding to reviews, always use the `pr-review` skill first.
 - This ensures all three feedback channels are checked (conversation, inline, reviews) and no feedback is missed.
 ```
+
+## Agent Catalog
+
+### PR Reviewer (`pr-reviewer`)
+
+Sonnet-powered sub-agent that handles the full PR review lifecycle. Delegates
+all PR workflow operations to an isolated context: checking feedback across all
+channels, responding to reviewers, committing fixes, posting Fix Reports, and
+running continuous review loops. Preloads the `pr-review` skill automatically.
+
+Use proactively for any PR/code review work instead of running review operations
+in the main conversation.
+
+Source:
+- `agents/pr-reviewer.md`
 
 ## Contributing / Adding Skills
 

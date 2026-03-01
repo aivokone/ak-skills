@@ -17,6 +17,8 @@ ak-skills/
 ├── README.md                    # Repository index / public landing page
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin manifest
+├── agents/                      # Plugin-level sub-agents
+│   └── <agent-name>.md          # Agent definition (frontmatter + system prompt)
 └── skills/                      # All skills live here
     └── <skill-name>/            # Each skill is self-contained
         ├── SKILL.md             # Skill entry point
@@ -34,6 +36,17 @@ Each skill follows this pattern:
 - `references/` - Detailed procedures and topic-specific documentation
 
 Per-skill `README.md` files are not used in this repository.
+
+### Agent Structure Convention
+
+Agents are markdown files in `agents/` with YAML frontmatter and a system prompt body:
+- `name` (required) — agent slug, used for invocation
+- `description` (required) — when to use this agent (drives proactive delegation)
+- `model` — model to run on (e.g., `sonnet`, `haiku`, `opus`)
+- `skills` — list of skill slugs to preload into the agent's context
+- `tools` — comma-separated list of tools the agent can use
+
+Agents are auto-discovered by the plugin system from the `agents/` directory. No `plugin.json` registration needed.
 
 ### Current Skills
 
@@ -78,6 +91,14 @@ When modifying a skill's SKILL.md:
    - use heading format: `### Human Name (`skill-slug`)`
    - include project and global install commands for that skill
 6. Update `.claude-plugin/plugin.json` (plugin manifest)
+
+### Adding a New Agent
+
+1. Create `agents/<agent-name>.md`
+2. Add frontmatter with `name` and `description` (required), plus `model`, `skills`, `tools` as needed
+3. Write system prompt as the markdown body
+4. Update root `README.md` — add to Agents Index and Agent Catalog
+5. No `plugin.json` update needed (auto-discovered from `agents/`)
 
 ### Major Skill Updates
 
