@@ -1,6 +1,6 @@
 #!/bin/bash
 # Reply to an inline PR review comment
-# Usage: ./reply-to-inline.sh <COMMENT_ID> <MESSAGE>
+# Usage: ./reply-to-inline.sh <COMMENT_ID> <MESSAGE|FILE_PATH>
 #
 # Finds the PR automatically from current branch
 
@@ -24,6 +24,18 @@ fi
 COMMENT_ID="$1"
 shift
 MESSAGE="$*"
+
+# If MESSAGE is a readable file, read content from it (supports .agents/scratch/ pattern)
+if [ -f "$MESSAGE" ]; then
+  _MSG_FILE="$MESSAGE"
+  MESSAGE=$(cat "$_MSG_FILE")
+  # Auto-cleanup scratch files
+  if [[ "$_MSG_FILE" != *".."* ]]; then
+    case "$_MSG_FILE" in
+      .agents/scratch/*|*/.agents/scratch/*) rm -f -- "$_MSG_FILE" ;;
+    esac
+  fi
+fi
 
 PR=$(gh pr view --json number -q .number 2>/dev/null || echo "")
 if [ -z "$PR" ]; then
