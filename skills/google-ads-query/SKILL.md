@@ -31,6 +31,18 @@ bash .claude/skills/google-ads-query/scripts/setup.sh
 gads "SELECT customer.id FROM customer"
 ```
 
+### Claude Code sandbox
+
+When running inside the Claude Code sandbox, network access is restricted. Add the following domains to `~/.claude/settings.json` under `sandbox.network.allowedDomains`:
+
+**Setup (pip install):**
+- `pypi.org`
+- `files.pythonhosted.org`
+
+**Runtime (Google Ads API):**
+- `googleads.googleapis.com`
+- `oauth2.googleapis.com`
+
 ## Config
 
 The script searches for `google-ads.yaml` in this order:
