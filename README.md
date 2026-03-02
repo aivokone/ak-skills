@@ -26,6 +26,7 @@ The table below is the canonical skills index for this repository.
 | [Agent Flight Recorder](skills/agent-flight-recorder/) | `agent-flight-recorder` | Always-on flight recorder for agent runs: logs deviations to per-run files |
 | [Local Reference](skills/local-ref/) | `local-ref` | Cache library docs locally so every session reads from disk instead of re-fetching |
 | [PR Review](skills/pr-review/) | `pr-review` | Systematic PR review workflow — check all feedback channels, respond, and report |
+| [SwiftBar](skills/swiftbar/) | `swiftbar` | Create, edit, and debug SwiftBar menu bar plugins for macOS |
 
 ## Agents Index
 
@@ -238,6 +239,29 @@ similar).
 
 - When checking PR feedback, reviewing code review comments, or responding to reviews, always use the `pr-review` skill first.
 - This ensures all three feedback channels are checked (conversation, inline, reviews) and no feedback is missed.
+```
+
+### SwiftBar (`swiftbar`)
+
+Create, edit, and debug SwiftBar menu bar plugins for macOS. Covers the full
+SwiftBar/BitBar output protocol, plugin naming conventions, metadata format,
+SF Symbols, streamable plugins, and common patterns. Supports bash and Python
+plugins. Includes a debug workflow for diagnosing broken plugins.
+
+Source:
+- `skills/swiftbar/SKILL.md`
+- `skills/swiftbar/references/patterns.md`
+
+Install to project scope:
+
+```bash
+npx skills add aivokone/ak-skills --skill swiftbar
+```
+
+Install globally:
+
+```bash
+npx skills add aivokone/ak-skills --skill swiftbar -g
 ```
 
 ## Agent Catalog
