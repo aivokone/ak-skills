@@ -25,6 +25,7 @@ Systematic workflow for checking, responding to, and reporting on PR feedback fr
 | `gh api ... -f body=` (posting comments) | `post-fix-report.sh` or `reply-to-inline.sh` |
 | `date -u +%Y-%m-%dT%H:%M:%SZ` | `get-context.sh` (outputs `timestamp:` field) |
 | `cat > file.md << 'EOF'` (bash heredoc) | Agent's native Write tool to `.agents/scratch/`, then pass file path to script |
+| `echo "..." \| script.sh` (piped stdin) | Script's direct flag: `-m`, `--body`, or file-path argument |
 
 **Entry point:** Always start with `get-context.sh` to detect current state. Use its output to decide next steps via the Decision Tree below.
 
@@ -35,7 +36,7 @@ Systematic workflow for checking, responding to, and reporting on PR feedback fr
 - **Gitignore:** Ensure `.agents/` is in the project's `.gitignore`
 - **Cleanup:** Scripts auto-delete scratch files after reading them, so the file won't exist on subsequent runs (no overwrite prompts)
 
-**Acceptable raw commands:** Project-specific test/build commands (`npm test`, `pytest`, `make build`, etc.) are fine — these are not PR workflow operations.
+**Acceptable raw commands:** Project-specific test/build commands (`npm test`, `npm run <script>`, `pytest`, `make build`, etc.) are fine — these are not PR workflow operations. For creating test fixtures, use the agent's native Write tool (write to `.agents/scratch/`) instead of `printf` or `echo` redirects. Avoid `echo ... | command` — piped commands trigger permission prompts in sandboxed environments.
 
 ## Entry Point Decision Tree
 
@@ -112,23 +113,16 @@ Posts trigger comments to start agent reviews. Without `--agents`, invokes all k
 ~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER] .agents/scratch/fix-report.md
 ```
 
-Or via stdin:
-
-```bash
-echo "$body" | ~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER]
-```
-
 ### Create PR (Idempotent)
 
 ```bash
 ~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body .agents/scratch/pr-body.md [--invoke]
 ```
 
-Or body as text string or via stdin:
+Or body as inline text:
 
 ```bash
 ~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body "Short description"
-echo "Description" | ~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title"
 ```
 
 `--body` auto-detects: if the value is a readable file, reads from it; otherwise treats as text. Idempotent: if a PR already exists, outputs its info. Refuses to run on `main`/`master`. Pushes branch if not yet pushed.
@@ -143,12 +137,6 @@ Output prefixes (machine-parseable):
 
 ```bash
 ~/.claude/skills/pr-review/scripts/commit-and-push.sh -m "fix: address review feedback"
-```
-
-Or message via stdin:
-
-```bash
-echo "fix: address review feedback" | ~/.claude/skills/pr-review/scripts/commit-and-push.sh
 ```
 
 Stages all changes, commits, and pushes. Refuses to run on `main`/`master`. Never force-pushes. Outputs commit hash and branch.

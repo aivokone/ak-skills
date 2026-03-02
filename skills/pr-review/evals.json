@@ -112,5 +112,14 @@
       "Does not run raw git checkout -b, git add, git commit, git push, or gh pr create",
       "Uses agent Write tool to create PR body file, then passes path to create-pr.sh --body (no bash heredoc)"
     ]
+  },
+  {
+    "name": "Avoid piped stdin to scripts",
+    "prompt": "Commit my changes with message 'fix: address review feedback' and post a fix report.",
+    "expectations": [
+      "Uses commit-and-push.sh with -m flag, not echo piped to stdin",
+      "Writes fix report using Write tool to .agents/scratch/, then passes path to post-fix-report.sh",
+      "Does not use echo ... | script.sh pattern"
+    ]
   }
 ]
