@@ -1,0 +1,23 @@
+{
+  "skill_name": "swiftbar",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Tee SwiftBar-plugin joka näyttää menu barissa kuinka monta minuuttia on jäljellä seuraavaan tasatuntiin. Dropdown-osiossa näkyy myös nykyinen kellonaika ja mahdollisuus refreshata manuaalisesti.",
+      "expected_output": "Bash-skripti oikealla nimeämiskonventiolla (esim. minutes-left.1m.sh), jossa on xbar-metadata, header näyttää minuutit, dropdown sisältää kellonajan ja refresh-painikkeen",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Tee SwiftBar-plugin Pythonilla joka hakee Hacker Newsin top 5 uutista ja näyttää ne menu bar -dropdownissa. Menu barissa näkyy HN-ikoni ja uutisten määrä. Klikkaamalla uutista avautuu linkki selaimessa.",
+      "expected_output": "Python-skripti oikealla nimellä (esim. hackernews.10m.py), jossa on API-kutsu HN:n julkiseen APIin, virhekäsittely, SF-symboli tai emoji headerissa, ja klikattavat linkit href-parametrilla",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Mun SwiftBar-plugin ei näytä mitään menu barissa. Voitko katsoa mikä on vialla? Tiedosto on nimeltään status.sh ja sisältö on:\n\n```\n#/bin/bash\necho Status: OK\necho ---\necho Details\necho Click here | href=https://google.com\n```",
+      "expected_output": "Tunnistaa ongelmat: 1) puuttuva !-merkki shebangista (pitäisi olla #!/bin/bash), 2) puuttuva lainausmerkki pipe-merkin ympäriltä echossa (echo 'Click here | href=...'). Korjaa molemmat ja selittää miksi ne aiheuttivat ongelman.",
+      "files": []
+    }
+  ]
+}
