@@ -69,10 +69,11 @@ npx skills add aivokone/ak-skills --skill seravo-dev -g
 ### Google Ads Query (`google-ads-query`)
 
 Read-only GAQL query tool for Google Ads accounts. Provides a lightweight Python
-CLI (`gads` alias) that executes Google Ads Query Language queries and returns
-structured JSON. Covers campaign performance, conversion tracking audits, keyword
-analysis, search terms reports, and ad group metrics. Includes enum code reference
-and pre-built query patterns for common reporting tasks.
+CLI (`gads` alias) that executes Google Ads Query Language queries via stdin
+piping (`echo "QUERY" | gads -`) and returns structured JSON. Covers campaign
+performance, conversion tracking audits, keyword analysis, search terms reports,
+and ad group metrics. Includes enum code reference and pre-built query patterns
+for common reporting tasks.
 
 Source:
 - `skills/google-ads-query/SKILL.md`

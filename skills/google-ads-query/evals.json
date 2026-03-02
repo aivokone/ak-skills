@@ -4,6 +4,7 @@
     "prompt": "Show me all active campaigns with their clicks and spend",
     "expectations": [
       "Uses gads alias to run a GAQL query",
+      "Pipes the query via stdin (echo '...' | gads -)",
       "Queries FROM campaign with campaign.status != 'REMOVED' filter",
       "Selects metrics.clicks and metrics.cost_micros",
       "Notes that cost_micros must be divided by 1,000,000 for currency"
@@ -14,6 +15,7 @@
     "prompt": "What did we spend on Google Ads last month?",
     "expectations": [
       "Queries metrics.cost_micros from campaign",
+      "Pipes the query via stdin (echo '...' | gads -)",
       "Explicitly converts cost_micros to currency (divide by 1,000,000)",
       "Uses a date range with segments.date with both >= and <= bounds"
     ]
@@ -23,6 +25,7 @@
     "prompt": "Check if our conversion tracking is set up correctly",
     "expectations": [
       "Follows the 6-step conversion tracking audit procedure",
+      "Pipes the query via stdin (echo '...' | gads -)",
       "Queries conversion_tracking_status from customer",
       "Queries all conversion_action rows to check status and primary_for_goal",
       "Queries campaign_conversion_goal and conversion_goal_campaign_config",
@@ -34,6 +37,7 @@
     "prompt": "Which keywords are getting the most clicks?",
     "expectations": [
       "Queries FROM keyword_view",
+      "Pipes the query via stdin (echo '...' | gads -)",
       "Selects ad_group_criterion.keyword.text and ad_group_criterion.keyword.match_type",
       "Includes metrics.clicks and metrics.impressions",
       "Filters out removed campaigns"
@@ -44,6 +48,7 @@
     "prompt": "Show campaign performance for January 2025",
     "expectations": [
       "Uses segments.date with both >= '2025-01-01' and <= '2025-01-31' bounds",
+      "Pipes the query via stdin (echo '...' | gads -)",
       "Queries campaign metrics including impressions, clicks, cost_micros, conversions"
     ]
   },
@@ -52,6 +57,7 @@
     "prompt": "Query campaigns for customer account 1234567890",
     "expectations": [
       "Uses --customer-id 1234567890 flag in the gads command",
+      "Pipes the query via stdin (echo '...' | gads -)",
       "Does not require editing the config file"
     ]
   },
@@ -78,6 +84,7 @@
     "prompt": "What search terms triggered our ads this week?",
     "expectations": [
       "Queries FROM search_term_view",
+      "Pipes the query via stdin (echo '...' | gads -)",
       "Selects search_term_view.search_term with metrics",
       "Applies a date range filter using segments.date"
     ]
@@ -104,6 +111,7 @@
     "prompt": "Show me all ad groups and their CPC bids",
     "expectations": [
       "Queries FROM ad_group",
+      "Pipes the query via stdin (echo '...' | gads -)",
       "Selects ad_group.cpc_bid_micros",
       "Notes that bid_micros must be divided by 1,000,000 for currency conversion"
     ]

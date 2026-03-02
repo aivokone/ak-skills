@@ -80,11 +80,11 @@ ga4 report -d pagePath -m screenPageViews --start 7daysAgo --end yesterday --fil
 # Multiple filters (ANDed)
 ga4 report -d date -m sessions --start 7daysAgo --end yesterday --filter "country==Finland" --filter "sessionSource==google"
 
-# JSON passthrough (for complex filters)
-ga4 report --json '{"dimensions":["pagePath"],"metrics":["screenPageViews"],"dateRanges":[{"startDate":"7daysAgo","endDate":"yesterday"}]}'
-
-# JSON via stdin (avoids shell escaping issues)
+# JSON via stdin (recommended — avoids shell escaping issues)
 echo '{"dimensions":["pagePath"],"metrics":["screenPageViews"],"dateRanges":[{"startDate":"7daysAgo","endDate":"yesterday"}]}' | ga4 report --json -
+
+# JSON as direct argument (only for simple JSON with no nested quotes)
+ga4 report --json '{"dimensions":["pagePath"],"metrics":["screenPageViews"],"dateRanges":[{"startDate":"7daysAgo","endDate":"yesterday"}]}'
 ```
 
 Flags:
@@ -138,7 +138,7 @@ ga4 custom-metrics   # Custom metrics
 | `field<N` | LESS_THAN | `sessions<10` |
 | `field<=N` | LESS_THAN_OR_EQUAL | `sessions<=5` |
 
-Multiple `--filter` flags are ANDed. For OR logic or nested NOT, use `--json` passthrough.
+Multiple `--filter` flags are ANDed. For OR logic or nested NOT, use `--json` passthrough via stdin (`echo '...' | ga4 report --json -`).
 
 ## Date Formats
 
