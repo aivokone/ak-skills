@@ -190,7 +190,11 @@ def main():
     args = parser.parse_args()
 
     # Support stdin: pass "-" as query to read from pipe (avoids shell escaping)
-    query = sys.stdin.read().strip() if args.query == "-" else args.query
+    query = args.query
+    if query == "-":
+        if sys.stdin.isatty():
+            parser.error("query is '-', but no data is being piped to stdin. Either pipe a query or provide it as an argument.")
+        query = sys.stdin.read().strip()
 
     config_path = find_config(args.config)
     client, default_cid = load_config(config_path)
