@@ -71,12 +71,17 @@ alias gads='.claude/skills/google-ads-query/scripts/.venv/bin/python3 .claude/sk
 # Basic query (customer ID from config)
 gads "SELECT campaign.name, metrics.clicks FROM campaign"
 
+# Pipe query via stdin (recommended — avoids shell escaping issues with single quotes)
+echo "SELECT campaign.name FROM campaign WHERE campaign.status != 'REMOVED'" | gads -
+
 # Override customer ID
 gads --customer-id 9876543210 "SELECT ..."
 
 # Explicit config path
 gads --config /path/to/google-ads.yaml "SELECT ..."
 ```
+
+**Stdin mode:** Pass `-` as the query argument to read from stdin. This is the recommended approach for queries containing single quotes (e.g., `WHERE campaign.status != 'REMOVED'`), as it bypasses shell argument escaping entirely.
 
 **Output:** JSON array to stdout. Enums returned as names (e.g., `"ENABLED"`, not `2`).
 **Errors:** JSON to stderr + exit code 1.

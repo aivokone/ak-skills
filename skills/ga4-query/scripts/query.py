@@ -305,7 +305,14 @@ def _build_report_from_json(spec, property_id):
 
 def cmd_report(args, property_id, creds_path):
     if args.json:
-        spec = json.loads(args.json)
+        if args.json == "-":
+            if sys.stdin.isatty():
+                print("Error: --json is '-', but no data is being piped to stdin. Either pipe JSON or provide it as an argument.", file=sys.stderr)
+                sys.exit(1)
+            raw_json = sys.stdin.read().strip()
+        else:
+            raw_json = args.json
+        spec = json.loads(raw_json)
         req = _build_report_from_json(spec, property_id)
         client = get_data_client(creds_path)
         response = client.run_report(req)

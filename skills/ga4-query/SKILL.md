@@ -82,6 +82,9 @@ ga4 report -d date -m sessions --start 7daysAgo --end yesterday --filter "countr
 
 # JSON passthrough (for complex filters)
 ga4 report --json '{"dimensions":["pagePath"],"metrics":["screenPageViews"],"dateRanges":[{"startDate":"7daysAgo","endDate":"yesterday"}]}'
+
+# JSON via stdin (avoids shell escaping issues)
+echo '{"dimensions":["pagePath"],"metrics":["screenPageViews"],"dateRanges":[{"startDate":"7daysAgo","endDate":"yesterday"}]}' | ga4 report --json -
 ```
 
 Flags:
