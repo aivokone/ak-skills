@@ -189,13 +189,16 @@ def main():
     parser.add_argument("--config", help="Explicit path to google-ads.yaml")
     args = parser.parse_args()
 
+    # Support stdin: pass "-" as query to read from pipe (avoids shell escaping)
+    query = sys.stdin.read().strip() if args.query == "-" else args.query
+
     config_path = find_config(args.config)
     client, default_cid = load_config(config_path)
 
     customer_id = (args.customer_id or default_cid).replace("-", "")
 
     try:
-        results = execute_query(client, args.query, customer_id)
+        results = execute_query(client, query, customer_id)
         json.dump(results, sys.stdout, indent=2, ensure_ascii=False)
         print()  # trailing newline
     except GoogleAdsException as ex:

@@ -305,7 +305,8 @@ def _build_report_from_json(spec, property_id):
 
 def cmd_report(args, property_id, creds_path):
     if args.json:
-        spec = json.loads(args.json)
+        raw_json = sys.stdin.read().strip() if args.json == "-" else args.json
+        spec = json.loads(raw_json)
         req = _build_report_from_json(spec, property_id)
         client = get_data_client(creds_path)
         response = client.run_report(req)
