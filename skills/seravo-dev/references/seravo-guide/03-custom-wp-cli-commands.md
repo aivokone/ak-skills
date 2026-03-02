@@ -54,7 +54,6 @@ ddev wp cache flush --path=/var/www/html/htdocs/wordpress
 **Legacy local pull helpers (deprecated for primary guidance):**
 - `wp-pull-production-db`
 - `wp-pull-shadow-db` / `wp-pull-staging-db`
-- `wp-pull-production-plugins`
 - `wp-pull-production-themes`
 - `wp-pull-production-core`
 - `wp-development-up`
