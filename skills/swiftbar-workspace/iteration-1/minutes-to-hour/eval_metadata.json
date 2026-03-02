@@ -1,0 +1,37 @@
+{
+  "eval_id": 1,
+  "eval_name": "minutes-to-hour",
+  "prompt": "Tee SwiftBar-plugin joka näyttää menu barissa kuinka monta minuuttia on jäljellä seuraavaan tasatuntiin. Dropdown-osiossa näkyy myös nykyinen kellonaika ja mahdollisuus refreshata manuaalisesti.",
+  "assertions": [
+    {
+      "id": "filename-convention",
+      "text": "Output filename follows SwiftBar naming convention with refresh interval (e.g., minutes-left.1m.sh)",
+      "type": "manual"
+    },
+    {
+      "id": "has-shebang",
+      "text": "Script starts with a valid shebang line (#!/bin/bash or #!/usr/bin/env bash)",
+      "type": "programmatic"
+    },
+    {
+      "id": "has-xbar-metadata",
+      "text": "Script contains xbar metadata tags (at least xbar.title and xbar.desc)",
+      "type": "programmatic"
+    },
+    {
+      "id": "has-separator",
+      "text": "Output includes --- separator between header and dropdown content",
+      "type": "programmatic"
+    },
+    {
+      "id": "calculates-minutes",
+      "text": "Script correctly calculates minutes remaining to next hour using date command or arithmetic",
+      "type": "manual"
+    },
+    {
+      "id": "has-refresh-button",
+      "text": "Dropdown includes a manual refresh option with refresh=true parameter",
+      "type": "programmatic"
+    }
+  ]
+}

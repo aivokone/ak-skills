@@ -1,0 +1,177 @@
+{
+  "metadata": {
+    "skill_name": "swiftbar",
+    "skill_path": "skills/swiftbar",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-03-02T08:15:00Z",
+    "evals_run": ["minutes-to-hour", "hackernews-top5", "debug-broken-plugin"],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "minutes-to-hour",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 51.5,
+        "tokens": 22623,
+        "tool_calls": 10,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Output filename follows SwiftBar naming convention with refresh interval", "passed": true, "evidence": "File named minutes-to-hour.1m.sh"},
+        {"text": "Script starts with a valid shebang line", "passed": true, "evidence": "#!/bin/bash"},
+        {"text": "Script contains xbar metadata tags", "passed": true, "evidence": "xbar.title, xbar.version, xbar.author, xbar.desc present"},
+        {"text": "Output includes --- separator", "passed": true, "evidence": "echo \"---\" present"},
+        {"text": "Script correctly calculates minutes remaining", "passed": true, "evidence": "date +%-M with 60 - current_minute"},
+        {"text": "Dropdown includes manual refresh option", "passed": true, "evidence": "echo \"Refresh | refresh=true\""}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "minutes-to-hour",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.83,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 33.5,
+        "tokens": 14258,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Output filename follows SwiftBar naming convention with refresh interval", "passed": true, "evidence": "File named minutes-to-hour.1m.sh"},
+        {"text": "Script starts with a valid shebang line", "passed": true, "evidence": "#!/bin/bash"},
+        {"text": "Script contains xbar metadata tags", "passed": false, "evidence": "Only swiftbar.hide* tags; no xbar.title or xbar.desc"},
+        {"text": "Output includes --- separator", "passed": true, "evidence": "echo \"---\" present"},
+        {"text": "Script correctly calculates minutes remaining", "passed": true, "evidence": "date +\"%M\" with 10# prefix"},
+        {"text": "Dropdown includes manual refresh option", "passed": true, "evidence": "echo \"Päivitä | refresh=true\""}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "hackernews-top5",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 46.0,
+        "tokens": 21571,
+        "tool_calls": 7,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Output file has .py extension", "passed": true, "evidence": "hackernews-top5.10m.py"},
+        {"text": "Filename follows SwiftBar convention with refresh interval", "passed": true, "evidence": "hackernews-top5.10m.py"},
+        {"text": "Script calls the Hacker News API", "passed": true, "evidence": "hacker-news.firebaseio.com"},
+        {"text": "Script includes error handling", "passed": true, "evidence": "try/except with fallback display"},
+        {"text": "News items include href= parameter", "passed": true, "evidence": "href={url} on each story"},
+        {"text": "Script contains xbar metadata tags", "passed": true, "evidence": "xbar.title, xbar.desc present"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "hackernews-top5",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.83,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 61.2,
+        "tokens": 18260,
+        "tool_calls": 9,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Output file has .py extension", "passed": true, "evidence": "hackernews-top5.30m.py"},
+        {"text": "Filename follows SwiftBar convention with refresh interval", "passed": true, "evidence": "hackernews-top5.30m.py"},
+        {"text": "Script calls the Hacker News API", "passed": true, "evidence": "hacker-news.firebaseio.com"},
+        {"text": "Script includes error handling", "passed": true, "evidence": "try/except in fetch_json"},
+        {"text": "News items include href= parameter", "passed": true, "evidence": "href={url} on each story"},
+        {"text": "Script contains xbar metadata tags", "passed": false, "evidence": "Uses bitbar.* tags instead of xbar.*"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "debug-broken-plugin",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 49.1,
+        "tokens": 18112,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Identifies the missing ! in shebang", "passed": true, "evidence": "Clearly identifies #/bin/bash → #!/bin/bash"},
+        {"text": "Identifies pipe character as bash pipe operator", "passed": true, "evidence": "Explains | is interpreted as shell pipe"},
+        {"text": "Provides corrected plugin script", "passed": true, "evidence": "Fixed status.sh with both corrections"},
+        {"text": "Explains why the issues cause the plugin to not display", "passed": true, "evidence": "Explains both OS interpreter and pipe-to-invalid-command"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "debug-broken-plugin",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 2,
+        "failed": 2,
+        "total": 4,
+        "time_seconds": 36.3,
+        "tokens": 14424,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Identifies the missing ! in shebang", "passed": true, "evidence": "Identifies #/bin/bash → #!/bin/bash"},
+        {"text": "Identifies pipe character as bash pipe operator", "passed": false, "evidence": "Says 'unquoted echo arguments work in this specific case' — WRONG"},
+        {"text": "Provides corrected plugin script", "passed": true, "evidence": "Fixed status.sh with quotes added"},
+        {"text": "Explains why the issues cause the plugin to not display", "passed": false, "evidence": "Only explains shebang; dismisses pipe issue as cosmetic"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 48.9, "stddev": 2.3, "min": 46.0, "max": 51.5},
+      "tokens": {"mean": 20769, "stddev": 1927, "min": 18112, "max": 22623}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.72, "stddev": 0.16, "min": 0.5, "max": 0.83},
+      "time_seconds": {"mean": 43.7, "stddev": 12.6, "min": 33.5, "max": 61.2},
+      "tokens": {"mean": 15647, "stddev": 1805, "min": 14258, "max": 18260}
+    },
+    "delta": {
+      "pass_rate": "+0.28",
+      "time_seconds": "+5.2",
+      "tokens": "+5122"
+    }
+  },
+  "notes": [
+    "With-skill achieves 100% pass rate across all 3 evals vs 72% without skill",
+    "Debug eval shows largest quality gap: with_skill finds both bugs (100%), without_skill misses the pipe issue (50%)",
+    "Without-skill consistently omits xbar metadata tags or uses deprecated bitbar.* format",
+    "With-skill uses ~33% more tokens on average, reflecting the skill context overhead",
+    "The pipe-operator bug in the debug test is the key differentiator — domain-specific knowledge about SwiftBar output protocol helps identify it"
+  ]
+}

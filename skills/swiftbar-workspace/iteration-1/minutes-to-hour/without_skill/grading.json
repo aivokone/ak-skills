@@ -1,0 +1,37 @@
+{
+  "eval_id": 1,
+  "run_id": "minutes-to-hour-without_skill",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "Output filename follows SwiftBar naming convention with refresh interval",
+      "passed": true,
+      "evidence": "File named minutes-to-hour.1m.sh — correct convention"
+    },
+    {
+      "text": "Script starts with a valid shebang line",
+      "passed": true,
+      "evidence": "Line 1: #!/bin/bash"
+    },
+    {
+      "text": "Script contains xbar metadata tags (at least xbar.title and xbar.desc)",
+      "passed": false,
+      "evidence": "Only swiftbar.hide* tags present (lines 3-5). No xbar.title, xbar.desc, xbar.author, or xbar.version. Missing standard plugin metadata."
+    },
+    {
+      "text": "Output includes --- separator between header and dropdown content",
+      "passed": true,
+      "evidence": "Line 20: echo \"---\""
+    },
+    {
+      "text": "Script correctly calculates minutes remaining to next hour",
+      "passed": true,
+      "evidence": "Lines 7-8: uses date +\"%M\" with 10# prefix to handle octal, and 60 - 10#$current_minute. Also handles 60→0 edge case."
+    },
+    {
+      "text": "Dropdown includes a manual refresh option with refresh=true",
+      "passed": true,
+      "evidence": "Line 24: echo \"Päivitä | refresh=true\""
+    }
+  ]
+}

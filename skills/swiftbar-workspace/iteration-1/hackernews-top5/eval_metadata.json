@@ -1,0 +1,37 @@
+{
+  "eval_id": 2,
+  "eval_name": "hackernews-top5",
+  "prompt": "Tee SwiftBar-plugin Pythonilla joka hakee Hacker Newsin top 5 uutista ja näyttää ne menu bar -dropdownissa. Menu barissa näkyy HN-ikoni ja uutisten määrä. Klikkaamalla uutista avautuu linkki selaimessa.",
+  "assertions": [
+    {
+      "id": "python-file",
+      "text": "Output file has .py extension",
+      "type": "programmatic"
+    },
+    {
+      "id": "filename-convention",
+      "text": "Filename follows SwiftBar convention with refresh interval (e.g., hackernews.10m.py)",
+      "type": "programmatic"
+    },
+    {
+      "id": "uses-hn-api",
+      "text": "Script calls the Hacker News API (hacker-news.firebaseio.com or hn.algolia.com)",
+      "type": "programmatic"
+    },
+    {
+      "id": "error-handling",
+      "text": "Script includes error handling (try/except) for API failures",
+      "type": "programmatic"
+    },
+    {
+      "id": "clickable-links",
+      "text": "News items include href= parameter for opening in browser",
+      "type": "programmatic"
+    },
+    {
+      "id": "has-xbar-metadata",
+      "text": "Script contains xbar metadata tags",
+      "type": "programmatic"
+    }
+  ]
+}
