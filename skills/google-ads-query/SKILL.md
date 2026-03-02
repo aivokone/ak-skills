@@ -27,7 +27,7 @@ bash .claude/skills/google-ads-query/scripts/setup.sh
 # 2. Create google-ads.yaml in project root or ~/.config/google-ads-query/
 #    (see Config section for template)
 
-# 3. Test
+# 3. Test (direct argument is fine here — no special characters)
 gads "SELECT customer.id FROM customer"
 ```
 
@@ -67,21 +67,26 @@ Use the `gads` alias for queries:
 alias gads='.claude/skills/google-ads-query/scripts/.venv/bin/python3 .claude/skills/google-ads-query/scripts/query.py'
 ```
 
-```bash
-# Basic query (customer ID from config)
-gads "SELECT campaign.name, metrics.clicks FROM campaign"
+**IMPORTANT: Always pipe queries via stdin.** Use `echo "QUERY" | gads -` for all queries. This avoids shell escaping failures with dots in field names, single quotes in WHERE clauses, and other GAQL punctuation. Direct argument passing (`gads "QUERY"`) is fragile and should only be used for trivial test queries like `gads "SELECT customer.id FROM customer"`.
 
-# Pipe query via stdin (recommended — avoids shell escaping issues with single quotes)
+```bash
+# Standard query (pipe via stdin to avoid shell escaping issues)
+echo "SELECT campaign.name, metrics.clicks FROM campaign" | gads -
+
+# Query with single quotes in WHERE clause
 echo "SELECT campaign.name FROM campaign WHERE campaign.status != 'REMOVED'" | gads -
 
 # Override customer ID
-gads --customer-id 9876543210 "SELECT ..."
+echo "SELECT campaign.name FROM campaign" | gads --customer-id 9876543210 -
 
 # Explicit config path
-gads --config /path/to/google-ads.yaml "SELECT ..."
+echo "SELECT campaign.name FROM campaign" | gads --config /path/to/google-ads.yaml -
+
+# Direct argument (only for trivial test queries with no special characters)
+gads "SELECT customer.id FROM customer"
 ```
 
-**Stdin mode:** Pass `-` as the query argument to read from stdin. This is the recommended approach for queries containing single quotes (e.g., `WHERE campaign.status != 'REMOVED'`), as it bypasses shell argument escaping entirely.
+**Direct argument mode:** Passing the query as a positional argument (`gads "QUERY"`) works only for simple queries with no single quotes, dots in WHERE clauses, or other special GAQL characters. For all real queries, use stdin (`echo "..." | gads -`).
 
 **Output:** JSON array to stdout. Enums returned as names (e.g., `"ENABLED"`, not `2`).
 **Errors:** JSON to stderr + exit code 1.
@@ -99,74 +104,74 @@ The script handles repeated fields (both scalar and composite) correctly via pro
 ## Query Patterns
 
 ### Campaign overview
-```
-SELECT campaign.id, campaign.name, campaign.status,
+```bash
+echo "SELECT campaign.id, campaign.name, campaign.status,
   campaign.advertising_channel_type, campaign.bidding_strategy_type,
   metrics.impressions, metrics.clicks, metrics.cost_micros,
   metrics.conversions, metrics.all_conversions
 FROM campaign
-WHERE campaign.status != 'REMOVED'
+WHERE campaign.status != 'REMOVED'" | gads -
 ```
 
 ### Conversion actions (full list)
-```
-SELECT conversion_action.id, conversion_action.name,
+```bash
+echo "SELECT conversion_action.id, conversion_action.name,
   conversion_action.status, conversion_action.category,
   conversion_action.origin, conversion_action.counting_type,
   conversion_action.include_in_conversions_metric,
   conversion_action.primary_for_goal
-FROM conversion_action
+FROM conversion_action" | gads -
 ```
 
 ### Campaign conversion goals
-```
-SELECT campaign.id, campaign.name,
+```bash
+echo "SELECT campaign.id, campaign.name,
   campaign_conversion_goal.category, campaign_conversion_goal.origin,
   campaign_conversion_goal.biddable
 FROM campaign_conversion_goal
-WHERE campaign.id = CAMPAIGN_ID
+WHERE campaign.id = CAMPAIGN_ID" | gads -
 ```
 
 ### Conversion goal config (account vs campaign level)
-```
-SELECT campaign.id, campaign.name,
+```bash
+echo "SELECT campaign.id, campaign.name,
   conversion_goal_campaign_config.goal_config_level
-FROM conversion_goal_campaign_config
+FROM conversion_goal_campaign_config" | gads -
 ```
 
 ### Metrics with date range
-```
-SELECT campaign.name, metrics.impressions, metrics.clicks,
+```bash
+echo "SELECT campaign.name, metrics.impressions, metrics.clicks,
   metrics.cost_micros, metrics.conversions, segments.date
 FROM campaign
 WHERE segments.date >= 'YYYY-MM-DD' AND segments.date <= 'YYYY-MM-DD'
-  AND campaign.status != 'REMOVED'
+  AND campaign.status != 'REMOVED'" | gads -
 ```
 
 ### Ad group details
-```
-SELECT ad_group.id, ad_group.name, ad_group.status,
+```bash
+echo "SELECT ad_group.id, ad_group.name, ad_group.status,
   ad_group.cpc_bid_micros, campaign.name
 FROM ad_group
-WHERE campaign.status != 'REMOVED'
+WHERE campaign.status != 'REMOVED'" | gads -
 ```
 
 ### Keywords
-```
-SELECT ad_group_criterion.keyword.text,
+```bash
+echo "SELECT ad_group_criterion.keyword.text,
   ad_group_criterion.keyword.match_type,
   ad_group_criterion.status, metrics.clicks,
   metrics.impressions, metrics.cost_micros
 FROM keyword_view
-WHERE campaign.status != 'REMOVED'
+WHERE campaign.status != 'REMOVED'" | gads -
 ```
 
 ### Search terms report
-```
-SELECT search_term_view.search_term, metrics.clicks,
+```bash
+echo "SELECT search_term_view.search_term, metrics.clicks,
   metrics.impressions, metrics.cost_micros, metrics.conversions
 FROM search_term_view
-WHERE segments.date >= 'YYYY-MM-DD' AND segments.date <= 'YYYY-MM-DD'
+WHERE segments.date >= 'YYYY-MM-DD' AND segments.date <= 'YYYY-MM-DD'" | gads -
 ```
 
 ## Enum Reference

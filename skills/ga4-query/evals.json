@@ -90,6 +90,7 @@
     "prompt": "Filter pages that contain /palvelut OR /yhteystiedot",
     "expectations": [
       "Notes that OR logic requires --json passthrough since multiple --filter flags are ANDed",
+      "Pipes JSON via stdin (echo '...' | ga4 report --json -) to avoid shell escaping",
       "Constructs a JSON body with orGroup filterExpression"
     ]
   },
