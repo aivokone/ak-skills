@@ -63,7 +63,7 @@ Item text | param1=value1 param2=value2
 | Parameter | Example | Effect |
 |-----------|---------|--------|
 | `color` | `color=red` or `color=#ff0000` | Text color (name or hex) |
-| `color` | `color=white,black` | Light mode, dark mode |
+| `color` | `color=black,white` | Text color for light,dark mode |
 | `font` | `font=Menlo` | macOS font name |
 | `size` | `size=14` | Font size in points |
 | `length` | `length=20` | Truncate text (full in tooltip) |

@@ -94,7 +94,6 @@ import urllib.request
 
 CITY = os.environ.get("CITY", "Helsinki")
 API_KEY = os.environ.get("API_KEY", "")
-CACHE = os.environ.get("SWIFTBAR_PLUGIN_CACHE_PATH", "/tmp")
 
 def fetch_weather():
     if not API_KEY:
