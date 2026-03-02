@@ -36,6 +36,19 @@ bash .claude/skills/ga4-query/scripts/setup.sh
 ga4 accounts
 ```
 
+### Claude Code sandbox
+
+When running inside the Claude Code sandbox, network access is restricted. Add the following domains to `~/.claude/settings.json` under `sandbox.network.allowedDomains`:
+
+**Setup (pip install):**
+- `pypi.org`
+- `files.pythonhosted.org`
+
+**Runtime (GA4 API):**
+- `analyticsdata.googleapis.com`
+- `analyticsadmin.googleapis.com`
+- `oauth2.googleapis.com`
+
 ## Config
 
 The script searches for `ga4-config.yaml` in this order:
