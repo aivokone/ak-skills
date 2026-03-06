@@ -27,6 +27,7 @@ The table below is the canonical skills index for this repository.
 | [Local Reference](skills/local-ref/) | `local-ref` | Cache library docs locally so every session reads from disk instead of re-fetching |
 | [PR Fix Loop](skills/pr-fix-loop/) | `pr-fix-loop` | Systematic PR fix loop — check all feedback channels, fix code, and loop until done |
 | [SwiftBar](skills/swiftbar/) | `swiftbar` | Create, edit, and debug SwiftBar menu bar plugins for macOS |
+| [Codebase Guide](skills/codebase-guide/) | `codebase-guide` | Beginner-friendly codebase guide: purpose, stack, architecture, data flow, key files |
 
 ## Agents Index
 
@@ -259,6 +260,30 @@ Install globally:
 
 ```bash
 npx skills add aivokone/ak-skills --skill swiftbar -g
+```
+
+### Codebase Guide (`codebase-guide`)
+
+Generate a beginner-friendly Markdown guide explaining any codebase. Produces
+a single document covering project purpose, tech stack, architecture (with
+Mermaid diagrams), data flow, key files, and how to run. Scales depth
+automatically based on project size — from small CLIs to large monorepos.
+
+Source:
+- `skills/codebase-guide/SKILL.md`
+- `skills/codebase-guide/references/output-template.md`
+- `skills/codebase-guide/references/writing-rules.md`
+
+Install to project scope:
+
+```bash
+npx skills add aivokone/ak-skills --skill codebase-guide
+```
+
+Install globally:
+
+```bash
+npx skills add aivokone/ak-skills --skill codebase-guide -g
 ```
 
 ## Agent Catalog
