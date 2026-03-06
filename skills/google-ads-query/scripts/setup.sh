@@ -14,5 +14,5 @@ if ! python3 -m venv "$SCRIPT_DIR/.venv" 2>/dev/null; then
   fi
 fi
 
-"$SCRIPT_DIR/.venv/bin/python3" -m pip install -q 'google-ads>=29.0.0'
+"$SCRIPT_DIR/.venv/bin/python3" -m pip install -q 'google-ads>=29.0.0' 'pyyaml>=6.0'
 echo "Done. Test: $SCRIPT_DIR/.venv/bin/python3 $SCRIPT_DIR/query.py --help"
