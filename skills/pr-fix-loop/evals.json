@@ -65,23 +65,49 @@
     ]
   },
   {
-    "name": "Loop mode review cycle",
-    "prompt": "Start a review loop on my PR — keep fixing and re-invoking until no more feedback.",
+    "name": "Default behavior is loop mode",
+    "prompt": "Run pr-fix-loop on my PR.",
     "expectations": [
-      "Recognizes loop mode from keyword 'loop'",
+      "Enters loop mode by default without requiring the user to say 'loop' or 'cycle'",
       "Uses open-branch.sh to ensure not on main/master before starting",
       "Uses create-pr.sh --invoke to embed triggers in PR body when creating new PR",
       "Distinguishes CREATED: vs EXISTS: output to decide whether separate invoke needed",
-      "Round 1 uses invoke-review-agents.sh only if PR already existed; rounds 2+ rely on @-mentions in Fix Report footer",
       "Uses wait-for-reviews.sh --since to poll for new feedback",
       "Uses check-pr-feedback.sh (full check) in each round, NOT check-new-feedback.sh",
       "Compares all feedback against previous Fix Reports to identify new/unaddressed items",
-      "Uses get-context.sh to obtain timestamps (no raw date command)",
       "Uses commit-and-push.sh to commit and push fixes",
       "Uses post-fix-report.sh with file-path argument",
-      "Fix Report footer has @-mentions for re-review (before max round)",
       "Respects max rounds (default 5); final round footer says max reached",
       "States termination conditions: nothing new to process, wait timeout, approve, user stops, or max rounds"
+    ]
+  },
+  {
+    "name": "Check mode shows feedback only",
+    "prompt": "pr-fix-loop check",
+    "expectations": [
+      "Uses get-context.sh then check-pr-feedback.sh to show current feedback",
+      "Does not run open-branch.sh, commit-and-push.sh, or create-pr.sh",
+      "Does not fix code, commit, or post Fix Reports",
+      "Does not invoke review agents or start a loop"
+    ]
+  },
+  {
+    "name": "Invoke mode triggers agents only",
+    "prompt": "pr-fix-loop invoke gemini",
+    "expectations": [
+      "Uses invoke-review-agents.sh with --agents gemini",
+      "Does not invoke all agents — only the one specified",
+      "Does not fix code or start a loop",
+      "Informs user that trigger was posted"
+    ]
+  },
+  {
+    "name": "Single-pass mode does one round only",
+    "prompt": "pr-fix-loop single-pass",
+    "expectations": [
+      "Performs one round: check feedback, fix code, post Fix Report",
+      "Does not re-invoke agents or loop back to check again",
+      "Uses get-context.sh, check-pr-feedback.sh, commit-and-push.sh, post-fix-report.sh"
     ]
   },
   {

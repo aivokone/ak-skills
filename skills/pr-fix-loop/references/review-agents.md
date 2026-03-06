@@ -26,13 +26,13 @@ Run `invoke-review-agents.sh` when:
 
 ```bash
 # Invoke all known agents
-~/.claude/skills/pr-review/scripts/invoke-review-agents.sh
+~/.claude/skills/pr-fix-loop/scripts/invoke-review-agents.sh
 
 # Invoke specific agents only
-~/.claude/skills/pr-review/scripts/invoke-review-agents.sh --agents codex,gemini
+~/.claude/skills/pr-fix-loop/scripts/invoke-review-agents.sh --agents codex,gemini
 
 # Show agent registry
-~/.claude/skills/pr-review/scripts/invoke-review-agents.sh --list
+~/.claude/skills/pr-fix-loop/scripts/invoke-review-agents.sh --list
 ```
 
 ## Embedding Triggers in PR Body
