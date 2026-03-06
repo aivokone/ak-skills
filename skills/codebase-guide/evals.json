@@ -1,0 +1,73 @@
+[
+  {
+    "name": "Explain a small project",
+    "prompt": "Use the codebase-guide skill to explain this codebase.",
+    "expectations": [
+      "Discovers project files (manifests, source directories, config, tests)",
+      "Produces a single Markdown file with sections: What Is This, Tech Stack, Project Map, Architecture",
+      "Includes a Mermaid diagram for architecture or data flow",
+      "Confirms output path with user before writing",
+      "Uses beginner-friendly language without unexplained jargon"
+    ]
+  },
+  {
+    "name": "Explain a monorepo",
+    "prompt": "Use the codebase-guide skill to create a guide for this monorepo.",
+    "expectations": [
+      "Identifies the monorepo structure (workspaces, packages, or apps)",
+      "Explains top-level architecture and shared infrastructure",
+      "Picks one representative package for deep-dive explanation",
+      "Lists other packages with one-sentence descriptions",
+      "Scales depth appropriately for large project size"
+    ]
+  },
+  {
+    "name": "Custom output path",
+    "prompt": "Use the codebase-guide skill to write a guide to docs/architecture.md.",
+    "expectations": [
+      "Writes output to the user-specified path (docs/architecture.md)",
+      "Does not write to docs/CODEBASE_GUIDE.md or any other default location",
+      "Creates parent directory if needed"
+    ]
+  },
+  {
+    "name": "Discovery uses agent tools",
+    "prompt": "Use the codebase-guide skill to document this codebase for onboarding.",
+    "expectations": [
+      "Uses file reading and search tools for discovery",
+      "Examines package manifests, directory structure, entry points, and test setup",
+      "Does not embed bash scripts in the output document"
+    ]
+  },
+  {
+    "name": "Tech stack detection",
+    "prompt": "Use the codebase-guide skill. Focus on tech stack detection.",
+    "expectations": [
+      "Identifies framework, language, and dependencies from manifest files",
+      "Produces a Tech Stack table with Layer, Technology, and Purpose columns",
+      "Purpose column explains why the technology is used in this project",
+      "Detects database, testing framework, and build tools if present"
+    ]
+  },
+  {
+    "name": "Data flow section",
+    "prompt": "Use the codebase-guide skill. Focus on the data flow section.",
+    "expectations": [
+      "Traces one representative request through the system end to end",
+      "Labels each step with the responsible file or module",
+      "Uses a Mermaid sequence diagram or clear numbered list",
+      "Ties the flow to specific source files the reader can examine"
+    ]
+  },
+  {
+    "name": "Output format and style",
+    "prompt": "Use the codebase-guide skill to generate a guide for this repository.",
+    "expectations": [
+      "Output is a single Markdown file",
+      "No emoji in headings",
+      "Includes a Project Map with annotated ASCII directory tree",
+      "Key Files section recommends 5-10 files to read first with explanations",
+      "Glossary is included only if project has domain-specific terminology"
+    ]
+  }
+]
