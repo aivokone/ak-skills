@@ -2,5 +2,5 @@
   "name": "ak-skills",
   "version": "1.0.0",
   "description": "Agent skills — operational tools, documentation workflows, and development practices",
-  "skills": ["seravo-dev", "google-ads-query", "ga4-query", "agent-flight-recorder", "local-ref", "pr-review", "swiftbar"]
+  "skills": ["seravo-dev", "google-ads-query", "ga4-query", "agent-flight-recorder", "local-ref", "pr-fix-loop", "swiftbar"]
 }

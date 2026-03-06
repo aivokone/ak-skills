@@ -1,6 +1,7 @@
 ---
-name: pr-review
-description: Use FIRST for any PR/code review work — checking feedback, reading CR comments, responding to reviewers, addressing review bot or human comments, or preparing commits on a PR. Collects feedback from ALL sources (conversation, inline, reviews) to prevent the common failure of missing inline feedback. Start with get-context.sh for state detection, then follow the Decision Tree. All operations through provided scripts — never raw git/gh commands.
+name: pr-fix-loop
+disable-model-invocation: true
+description: Systematic PR fix loop — checks feedback from all channels (conversation, inline, reviews), fixes code, posts fix reports, and loops until no new feedback remains. All operations through provided scripts.
 ---
 
 # PR Review Workflow
@@ -10,6 +11,22 @@ Systematic workflow for checking, responding to, and reporting on PR feedback fr
 **Requirements:** GitHub repository with [GitHub CLI (`gh`)](https://cli.github.com/) installed and authenticated.
 
 **Key insight:** PR feedback arrives through three different channels (conversation comments, inline threads, review submissions). Missing any channel means missing feedback. This skill ensures all channels are checked systematically.
+
+## Modes
+
+| Mode | When | What happens |
+|------|------|--------------|
+| **loop** (default) | No mode specified | Full fix-review cycle: check → fix → report → re-invoke → repeat until done (max 5 rounds) |
+| **check** | "check", "status" | Show current feedback from all channels, then stop |
+| **invoke** | "invoke", "invoke gemini" | Invoke review agents (all or named), then stop |
+| **single-pass** | "single-pass", "once" | Check → fix → report once, no re-invoke or looping |
+
+Invocation examples:
+- `/pr-fix-loop` → loop mode (default)
+- `/pr-fix-loop check` → just show feedback
+- `/pr-fix-loop invoke` → invoke all review agents
+- `/pr-fix-loop invoke gemini,codex` → invoke specific agents
+- `/pr-fix-loop single-pass` → one round of fixes, no loop
 
 ## Self-Contained Constraint
 
@@ -38,24 +55,57 @@ Systematic workflow for checking, responding to, and reporting on PR feedback fr
 
 **Acceptable raw commands:** Project-specific test/build commands (`npm test`, `npm run <script>`, `pytest`, `make build`, etc.) are fine — these are not PR workflow operations. For creating test fixtures, use the agent's native Write tool (write to `.agents/scratch/`) instead of `printf` or `echo` redirects. Avoid `echo ... | command` — piped commands trigger permission prompts in sandboxed environments.
 
-## Entry Point Decision Tree
+## Entry Point
 
-Run `get-context.sh` first. Based on its output, follow the matching path:
+Always start with `get-context.sh` to detect current state. Then select the mode from the user's prompt (see Modes above) and follow the matching workflow below.
+
+### check mode
+
+1. `get-context.sh` — detect PR number
+2. `check-pr-feedback.sh` — show all feedback from all channels
+3. Stop. No commits, no invocations, no looping.
+
+### invoke mode
+
+1. `get-context.sh` — detect PR number
+2. If no PR exists: inform user, stop
+3. `invoke-review-agents.sh` [with `--agents` if user named specific agents]
+4. Inform user that triggers were posted
+5. Stop. No fixes, no commits, no looping.
+
+### single-pass mode
+
+1. `get-context.sh` — detect state
+2. Follow the setup table below to ensure a PR exists
+3. `check-pr-feedback.sh` — get all feedback
+4. Fix code based on feedback
+5. `commit-and-push.sh -m "fix: address review feedback"`
+6. `reply-to-inline.sh` for each addressed inline comment
+7. Post Fix Report via `post-fix-report.sh`
+8. Stop. No re-invocation, no looping.
+
+### loop mode (default)
+
+1. `get-context.sh` — detect state
+2. Follow the setup table below to ensure a PR exists
+3. Continue with the Loop Mode workflow (step 3 onward in the Loop Mode section)
+
+### Setup table (for single-pass and loop modes)
+
+Based on `get-context.sh` output, ensure a branch and PR exist before proceeding:
 
 | `on_default` | `has_changes` | `pr_number` | Action sequence |
 |---|---|---|---|
 | `true` | `true` | empty | `open-branch.sh` → `commit-and-push.sh` → `create-pr.sh --invoke --title "..."` |
 | `true` | `false` | empty | Ask user what to do (no changes to work with) |
-| `false` | any | has number | `check-pr-feedback.sh` (existing PR — review cycle) |
+| `false` | any | has number | Continue (PR exists) |
 | `false` | `true` | empty | `commit-and-push.sh` → `create-pr.sh --invoke --title "..."` |
 | `false` | `false` | empty | `create-pr.sh --invoke --title "..."` (branch exists, already pushed) |
-
-For loop mode, see the Loop Mode section — the decision tree gets you started, then the loop takes over.
 
 ## Quick Commands
 
 **Script path resolution:** Before running any script, determine the correct base path. Check in this order:
-1. `~/.claude/skills/pr-review/scripts/` — global install for Claude Code
+1. `~/.claude/skills/pr-fix-loop/scripts/` — global install for Claude Code
 2. Other global paths by preference of the agent
 
 Use whichever path exists. Script paths below use the global form; substitute accordingly for your agent or install method.
@@ -63,7 +113,7 @@ Use whichever path exists. Script paths below use the global form; substitute ac
 ### Get Context (Entry Point)
 
 ```bash
-~/.claude/skills/pr-review/scripts/get-context.sh
+~/.claude/skills/pr-fix-loop/scripts/get-context.sh
 ```
 
 Outputs key-value pairs: `branch`, `on_default`, `has_changes`, `change_summary`, `pr_number`, `pr_url`, `pr_state`, `timestamp`, `repo`. Use `timestamp` for `wait-for-reviews.sh --since`. Gracefully handles missing `gh` (empty PR/repo fields). Exits 1 only on detached HEAD or not in a git repo.
@@ -71,7 +121,7 @@ Outputs key-value pairs: `branch`, `on_default`, `has_changes`, `change_summary`
 ### Open Branch (Idempotent)
 
 ```bash
-~/.claude/skills/pr-review/scripts/open-branch.sh [BRANCH_NAME]
+~/.claude/skills/pr-fix-loop/scripts/open-branch.sh [BRANCH_NAME]
 ```
 
 If already on a non-main/master branch, prints branch name and exits. If on main/master, creates branch, switches, and pushes with `-u`. Default name: `review-loop-YYYYMMDD-HHMMSS`.
@@ -79,7 +129,7 @@ If already on a non-main/master branch, prints branch name and exits. If on main
 ### Check All Feedback (CRITICAL - Use First)
 
 ```bash
-~/.claude/skills/pr-review/scripts/check-pr-feedback.sh [PR_NUMBER]
+~/.claude/skills/pr-fix-loop/scripts/check-pr-feedback.sh [PR_NUMBER]
 ```
 
 Checks all three channels: conversation comments, inline comments, reviews.
@@ -89,8 +139,8 @@ If no PR number provided, detects current PR from branch.
 ### Reply to Inline Comment
 
 ```bash
-~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> "Your message"
-~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> .agents/scratch/reply.md
+~/.claude/skills/pr-fix-loop/scripts/reply-to-inline.sh <COMMENT_ID> "Your message"
+~/.claude/skills/pr-fix-loop/scripts/reply-to-inline.sh <COMMENT_ID> .agents/scratch/reply.md
 ```
 
 Replies in-thread to inline comments. Accepts message as inline text or a file path (auto-detects). Use file path when message contains `${...}` or other shell-sensitive syntax to avoid permission prompts. Uses `-F` flag (not `--raw-field`) which properly handles numeric ID conversion in `gh` CLI.
@@ -102,7 +152,7 @@ Replies in-thread to inline comments. Accepts message as inline text or a file p
 ### Invoke Review Agents
 
 ```bash
-~/.claude/skills/pr-review/scripts/invoke-review-agents.sh [--agents SLUG,...] [--format-only] [PR_NUMBER]
+~/.claude/skills/pr-fix-loop/scripts/invoke-review-agents.sh [--agents SLUG,...] [--format-only] [PR_NUMBER]
 ```
 
 Posts trigger comments to start agent reviews. Without `--agents`, invokes all known agents (Codex, Gemini, CodeRabbit). Use `--list` to see available agents. Use `--format-only` to print trigger text to stdout without posting (for embedding in PR body).
@@ -110,19 +160,19 @@ Posts trigger comments to start agent reviews. Without `--agents`, invokes all k
 ### Post Fix Report
 
 ```bash
-~/.claude/skills/pr-review/scripts/post-fix-report.sh [PR_NUMBER] .agents/scratch/fix-report.md
+~/.claude/skills/pr-fix-loop/scripts/post-fix-report.sh [PR_NUMBER] .agents/scratch/fix-report.md
 ```
 
 ### Create PR (Idempotent)
 
 ```bash
-~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body .agents/scratch/pr-body.md [--invoke]
+~/.claude/skills/pr-fix-loop/scripts/create-pr.sh --title "PR title" --body .agents/scratch/pr-body.md [--invoke]
 ```
 
 Or body as inline text:
 
 ```bash
-~/.claude/skills/pr-review/scripts/create-pr.sh --title "PR title" --body "Short description"
+~/.claude/skills/pr-fix-loop/scripts/create-pr.sh --title "PR title" --body "Short description"
 ```
 
 `--body` auto-detects: if the value is a readable file, reads from it; otherwise treats as text. Idempotent: if a PR already exists, outputs its info. Refuses to run on `main`/`master`. Pushes branch if not yet pushed.
@@ -136,7 +186,7 @@ Output prefixes (machine-parseable):
 ### Commit and Push
 
 ```bash
-~/.claude/skills/pr-review/scripts/commit-and-push.sh -m "fix: address review feedback"
+~/.claude/skills/pr-fix-loop/scripts/commit-and-push.sh -m "fix: address review feedback"
 ```
 
 Stages all changes, commits, and pushes. Refuses to run on `main`/`master`. Never force-pushes. Outputs commit hash and branch.
@@ -144,7 +194,7 @@ Stages all changes, commits, and pushes. Refuses to run on `main`/`master`. Neve
 ### Wait for Reviews
 
 ```bash
-~/.claude/skills/pr-review/scripts/wait-for-reviews.sh [PR_NUMBER] --since TIMESTAMP [--timeout 600] [--interval 30]
+~/.claude/skills/pr-fix-loop/scripts/wait-for-reviews.sh [PR_NUMBER] --since TIMESTAMP [--timeout 600] [--interval 30]
 ```
 
 Polls all three feedback channels for new comments posted after `TIMESTAMP` by non-self users. Exits 0 when new feedback detected, exits 1 on timeout. Default: 10 min timeout, 30s interval.
@@ -152,7 +202,7 @@ Polls all three feedback channels for new comments posted after `TIMESTAMP` by n
 ### Check New Feedback (Differential)
 
 ```bash
-~/.claude/skills/pr-review/scripts/check-new-feedback.sh [PR_NUMBER] --since TIMESTAMP
+~/.claude/skills/pr-fix-loop/scripts/check-new-feedback.sh [PR_NUMBER] --since TIMESTAMP
 ```
 
 Like `check-pr-feedback.sh` but only shows feedback created after `TIMESTAMP`, excluding self-posted comments. Use in loop mode to distinguish new from already-addressed feedback. Ends with a summary line: `Summary: N conversation, M inline, K reviews`.
@@ -162,7 +212,7 @@ Like `check-pr-feedback.sh` but only shows feedback created after `TIMESTAMP`, e
 Always use `commit-and-push.sh` for committing. It stages all changes, commits, pushes, and enforces branch safety (refuses `main`/`master`, never force-pushes).
 
 ```bash
-~/.claude/skills/pr-review/scripts/commit-and-push.sh -m "<type>: <outcome>"
+~/.claude/skills/pr-fix-loop/scripts/commit-and-push.sh -m "<type>: <outcome>"
 ```
 
 ### Commit Type Conventions
@@ -214,7 +264,7 @@ Fill Summary, How to test, and Notes sections.
 ### Critical Rule: Check ALL Three Channels
 
 ```bash
-~/.claude/skills/pr-review/scripts/check-pr-feedback.sh
+~/.claude/skills/pr-fix-loop/scripts/check-pr-feedback.sh
 ```
 
 **Why:** Different reviewers post in different channels. Missing any channel = missing feedback.
@@ -243,9 +293,9 @@ If a review comment is incorrect, respond with a clear explanation of why rather
 
 ```bash
 # Short messages — inline text:
-~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> "Fixed @ abc123. [details] —[Your Agent Name]"
+~/.claude/skills/pr-fix-loop/scripts/reply-to-inline.sh <COMMENT_ID> "Fixed @ abc123. [details] —[Your Agent Name]"
 # Messages with ${...} or shell-sensitive syntax — write to file first, pass path:
-~/.claude/skills/pr-review/scripts/reply-to-inline.sh <COMMENT_ID> .agents/scratch/reply.md
+~/.claude/skills/pr-fix-loop/scripts/reply-to-inline.sh <COMMENT_ID> .agents/scratch/reply.md
 ```
 
 3. **Include in Fix Report** (conversation comment) — the Fix Report summarizes all changes, but inline replies ensure each comment gets a direct acknowledgment
@@ -256,10 +306,10 @@ Run `invoke-review-agents.sh` when `check-pr-feedback.sh` returns empty output f
 
 ```bash
 # No feedback on the PR? Invoke all agents:
-~/.claude/skills/pr-review/scripts/invoke-review-agents.sh
+~/.claude/skills/pr-fix-loop/scripts/invoke-review-agents.sh
 
 # User mentioned specific agents (e.g., "ask Gemini and Codex to review"):
-~/.claude/skills/pr-review/scripts/invoke-review-agents.sh --agents gemini,codex
+~/.claude/skills/pr-fix-loop/scripts/invoke-review-agents.sh --agents gemini,codex
 ```
 
 **Agent selection from prompt:** If the user's prompt names specific agents (e.g., "have Codex review this"), use `--agents` with the matching slug(s). Otherwise invoke all.
@@ -277,7 +327,7 @@ After addressing feedback, **always** post ONE conversation comment (Fix Report)
 Write the report with the agent's Write tool (e.g., to `.agents/scratch/fix-report.md`), then post it:
 
 ```bash
-~/.claude/skills/pr-review/scripts/post-fix-report.sh .agents/scratch/fix-report.md
+~/.claude/skills/pr-fix-loop/scripts/post-fix-report.sh .agents/scratch/fix-report.md
 ```
 
 Fix Report format:
@@ -346,7 +396,7 @@ After Fix Report:
 
 ## Loop Mode
 
-Activate when the user's prompt requests a review loop, review cycle, or similar — in any words — meaning: run the full review-fix-review cycle autonomously until no new feedback remains.
+**Loop mode is the default.** Run the full review-fix-review cycle autonomously until no new feedback remains.
 
 **Default max rounds: 5.** Override with user instruction if needed.
 
@@ -409,13 +459,13 @@ If multiple reviewers flag the same issue:
 Use `check-pr-feedback.sh` — its output already includes `[user.login]` for every comment across all three channels. Filter the output for the reviewer you need:
 
 ```bash
-~/.claude/skills/pr-review/scripts/check-pr-feedback.sh | grep "coderabbitai"
+~/.claude/skills/pr-fix-loop/scripts/check-pr-feedback.sh | grep "coderabbitai"
 ```
 
 ## Troubleshooting
 
 **"Can't find review comments"**
-→ Check all three channels. Use `~/.claude/skills/pr-review/scripts/check-pr-feedback.sh`, not just `gh pr view`.
+→ Check all three channels. Use `~/.claude/skills/pr-fix-loop/scripts/check-pr-feedback.sh`, not just `gh pr view`.
 
 **"Reviewer posted inline, should I reply inline?"**
 → Yes, always. Reply inline with a brief ack so the comment can be resolved in GitHub UI. Also include in Fix Report.
@@ -436,7 +486,7 @@ Use `check-pr-feedback.sh` — its output already includes `[user.login]` for ev
 → Never trust suggestions blindly. Verify the issue exists, evaluate the fix, and test before committing. Review bots frequently hallucinate problems or suggest incorrect fixes.
 
 **"No feedback on PR — all three channels empty"**
-→ Agents haven't reviewed yet. Run `~/.claude/skills/pr-review/scripts/invoke-review-agents.sh` to trigger them, then wait and re-check.
+→ Agents haven't reviewed yet. Run `~/.claude/skills/pr-fix-loop/scripts/invoke-review-agents.sh` to trigger them, then wait and re-check.
 
 **"Committed before checking latest feedback"**
 → Run feedback check script immediately before declaring PR "ready" or "complete."
@@ -454,7 +504,7 @@ Use `check-pr-feedback.sh` — its output already includes `[user.login]` for ev
 
 **Most common mistakes:**
 ❌ Only checking conversation or `gh pr view`
-✅ Always run `~/.claude/skills/pr-review/scripts/check-pr-feedback.sh`
+✅ Always run `~/.claude/skills/pr-fix-loop/scripts/check-pr-feedback.sh`
 
 ❌ Blindly applying review suggestions without verifying the issue exists
 ✅ Read the actual code, confirm the problem, test the fix

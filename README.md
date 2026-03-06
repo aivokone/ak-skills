@@ -25,7 +25,7 @@ The table below is the canonical skills index for this repository.
 | [GA4 Query](skills/ga4-query/) | `ga4-query` | Query Google Analytics 4 via the Data API: traffic, sessions, page views, realtime, conversions |
 | [Agent Flight Recorder](skills/agent-flight-recorder/) | `agent-flight-recorder` | Always-on flight recorder for agent runs: logs deviations to per-run files |
 | [Local Reference](skills/local-ref/) | `local-ref` | Cache library docs locally so every session reads from disk instead of re-fetching |
-| [PR Review](skills/pr-review/) | `pr-review` | Systematic PR review workflow — check all feedback channels, respond, and report |
+| [PR Fix Loop](skills/pr-fix-loop/) | `pr-fix-loop` | Systematic PR fix loop — check all feedback channels, fix code, and loop until done |
 | [SwiftBar](skills/swiftbar/) | `swiftbar` | Create, edit, and debug SwiftBar menu bar plugins for macOS |
 
 ## Agents Index
@@ -34,7 +34,7 @@ Plugin-level sub-agents auto-discovered from `agents/`.
 
 | Name | Slug | Description |
 |------|------|-------------|
-| [PR Reviewer](agents/pr-reviewer.md) | `pr-reviewer` | Sonnet-powered sub-agent for the full PR review lifecycle |
+| [PR Reviewer](agents/pr-reviewer.md) | `pr-reviewer` | Sonnet-powered sub-agent for the full PR fix loop lifecycle |
 
 ## Skill Catalog
 
@@ -191,15 +191,11 @@ Install globally:
 npx skills add aivokone/ak-skills --skill local-ref -g
 ```
 
-### PR Review (`pr-review`)
+### PR Fix Loop (`pr-fix-loop`)
 
-Systematic PR review workflow for checking, responding to, and reporting on
-feedback from any source — human reviewers, review bots (CodeRabbit, Gemini,
-Codex, Snyk, etc.), or AI agents. Ensures all three feedback channels
-(conversation, inline, reviews) are checked so no feedback is missed. When no
-feedback exists, automatically invokes review agents. Supports a continuous
-loop mode (invoke → check → fix → report → re-invoke) until all feedback is
-resolved.
+Systematic PR fix loop that checks feedback from all channels (conversation,
+inline, reviews), fixes code, posts fix reports, and loops until no new
+feedback remains. Invokes review agents when no feedback exists yet.
 
 Includes helper scripts (relative to skill directory):
 
@@ -215,18 +211,18 @@ Includes helper scripts (relative to skill directory):
 - `scripts/check-new-feedback.sh` — differential feedback check (new items only since timestamp)
 
 Source:
-- `skills/pr-review/SKILL.md`
+- `skills/pr-fix-loop/SKILL.md`
 
 Install to project scope:
 
 ```bash
-npx skills add aivokone/ak-skills --skill pr-review
+npx skills add aivokone/ak-skills --skill pr-fix-loop
 ```
 
 Install globally:
 
 ```bash
-npx skills add aivokone/ak-skills --skill pr-review -g
+npx skills add aivokone/ak-skills --skill pr-fix-loop -g
 ```
 
 ### Project instruction snippet
@@ -236,10 +232,10 @@ project's agent instruction file (for example `AGENTS.md`, `CLAUDE.md`, or
 similar).
 
 ```md
-### PR Review Workflow (`pr-review`)
+### PR Fix Loop (`pr-fix-loop`)
 
-- When checking PR feedback, reviewing code review comments, or responding to reviews, always use the `pr-review` skill first.
-- This ensures all three feedback channels are checked (conversation, inline, reviews) and no feedback is missed.
+- Invoke `/pr-fix-loop` to run the full review-fix-review loop on a PR.
+- Checks all three feedback channels (conversation, inline, reviews) and loops until no new feedback remains.
 ```
 
 ### SwiftBar (`swiftbar`)
@@ -269,13 +265,10 @@ npx skills add aivokone/ak-skills --skill swiftbar -g
 
 ### PR Reviewer (`pr-reviewer`)
 
-Sonnet-powered sub-agent that handles the full PR review lifecycle. Delegates
+Sonnet-powered sub-agent that handles the full PR fix loop lifecycle. Delegates
 all PR workflow operations to an isolated context: checking feedback across all
-channels, responding to reviewers, committing fixes, posting Fix Reports, and
-running continuous review loops. Preloads the `pr-review` skill automatically.
-
-Use proactively for any PR/code review work instead of running review operations
-in the main conversation.
+channels, fixing code, committing, posting Fix Reports, and looping until done.
+Preloads the `pr-fix-loop` skill automatically.
 
 Source:
 - `agents/pr-reviewer.md`
