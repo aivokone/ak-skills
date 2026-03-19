@@ -1,0 +1,150 @@
+[
+  {
+    "name": "Default invocation launches all available CLIs",
+    "prompt": "/cli-review-fix",
+    "expectations": [
+      "Checks availability of both codex and gemini CLIs via command -v",
+      "Detects review context automatically (PR, branch, uncommitted)",
+      "Launches available CLIs in parallel using separate Bash calls or sub-agents",
+      "Presents consolidated review results with severity indicators",
+      "Critically evaluates each finding before fixing",
+      "Presents fix report with FIXED/WONTFIX/DEFERRED/QUESTION statuses"
+    ]
+  },
+  {
+    "name": "Codex-only invocation",
+    "prompt": "/cli-review-fix codex",
+    "expectations": [
+      "Only runs Codex CLI, not Gemini",
+      "Uses codex exec review with appropriate context flags (--base or --uncommitted)",
+      "Captures output via -o flag to /tmp/codex-review.md",
+      "Critically evaluates findings before fixing",
+      "Presents fix report with statuses"
+    ]
+  },
+  {
+    "name": "Gemini-only invocation",
+    "prompt": "/cli-review-fix gemini",
+    "expectations": [
+      "Only runs Gemini CLI, not Codex",
+      "Uses gemini -p with --sandbox flag for safety",
+      "Loads review prompt from references/review-prompt.md",
+      "Pipes diff to gemini stdin for diff-based contexts",
+      "Critically evaluates findings before fixing",
+      "Presents fix report with statuses"
+    ]
+  },
+  {
+    "name": "PR context detection",
+    "prompt": "/cli-review-fix (user is on a branch with an open PR)",
+    "expectations": [
+      "Detects PR via gh pr view --json number,baseRefName",
+      "Uses PR base branch for the diff",
+      "For Codex: uses codex exec review --base <baseRefName>",
+      "For Gemini: pipes git diff <base>...HEAD to gemini -p",
+      "Reports PR number in the output header"
+    ]
+  },
+  {
+    "name": "Branch diff context detection",
+    "prompt": "/cli-review-fix (user is on a feature branch with commits ahead, no PR)",
+    "expectations": [
+      "Detects no PR via gh pr view failure",
+      "Detects commits ahead of main/master via git log",
+      "Uses branch diff (main...HEAD) as review context",
+      "Reports branch name in the output header"
+    ]
+  },
+  {
+    "name": "Uncommitted changes context",
+    "prompt": "/cli-review-fix (user is on main with uncommitted changes)",
+    "expectations": [
+      "Detects no PR and no branch diff",
+      "Detects uncommitted changes via git status --porcelain",
+      "For Codex: uses codex exec review --uncommitted",
+      "For Gemini: pipes git diff to gemini",
+      "Reports 'uncommitted changes' in the output header"
+    ]
+  },
+  {
+    "name": "No reviewable context",
+    "prompt": "/cli-review-fix (clean main branch, no PR, no changes)",
+    "expectations": [
+      "Detects no reviewable context",
+      "Informs user there is nothing to review",
+      "Suggests making changes or specifying a scope",
+      "Does not launch any CLI"
+    ]
+  },
+  {
+    "name": "CLI not installed shows helpful error",
+    "prompt": "/cli-review-fix codex (codex is not installed)",
+    "expectations": [
+      "Checks command -v codex and finds it missing",
+      "Shows helpful error pointing to install instructions",
+      "Mentions OPENAI_API_KEY requirement",
+      "Does not attempt to run the missing CLI"
+    ]
+  },
+  {
+    "name": "Multi-engine agreement analysis",
+    "prompt": "/cli-review-fix (both CLIs available, on a PR)",
+    "expectations": [
+      "Runs both CLIs in parallel",
+      "Compares findings between engines using deduplication heuristic",
+      "Marks shared findings as AGREED",
+      "Marks unique findings with engine attribution (CODEX ONLY, GEMINI ONLY)",
+      "Shows agreement summary table with counts per severity"
+    ]
+  },
+  {
+    "name": "One CLI fails while other succeeds",
+    "prompt": "/cli-review-fix (both selected, codex exits with error)",
+    "expectations": [
+      "Presents results from the successful CLI (Gemini)",
+      "Notes the Codex failure with error details",
+      "Does not crash or abort entirely",
+      "Proceeds with fix phase using available results"
+    ]
+  },
+  {
+    "name": "Auto-fix applies valid findings",
+    "prompt": "/cli-review-fix (CLIs return several valid findings)",
+    "expectations": [
+      "Critically evaluates each finding by reading the actual code",
+      "Fixes valid issues in the codebase",
+      "Runs project tests after applying fixes",
+      "Presents fix report with FIXED status and verification for each fix"
+    ]
+  },
+  {
+    "name": "Hallucinated finding rejected",
+    "prompt": "/cli-review-fix (CLI reports an issue that does not exist in the code)",
+    "expectations": [
+      "Reads the actual code at the referenced file and line",
+      "Determines the finding does not match reality",
+      "Does not modify the code for this finding",
+      "Marks it as WONTFIX with explanation of why it was rejected"
+    ]
+  },
+  {
+    "name": "Conflicting suggestions between engines",
+    "prompt": "/cli-review-fix (Codex and Gemini suggest different fixes for the same issue)",
+    "expectations": [
+      "Recognizes both engines flagged the same location",
+      "Evaluates both suggestions against project conventions and code context",
+      "Either picks the better fix or marks as QUESTION if human judgment needed",
+      "Documents the conflict and reasoning in the fix report"
+    ]
+  },
+  {
+    "name": "Sub-agent delegation when available",
+    "prompt": "/cli-review-fix (Agent tool is available)",
+    "expectations": [
+      "Considers using sub-agents for CLI execution and/or fix work",
+      "Delegates CLI calls to separate sub-agents for parallel execution",
+      "Sub-agents return structured findings, not raw CLI output",
+      "Main context receives concise results without large CLI output bloat"
+    ]
+  }
+]
