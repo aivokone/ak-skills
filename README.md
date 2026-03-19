@@ -28,6 +28,7 @@ The table below is the canonical skills index for this repository.
 | [PR Fix Loop](skills/pr-fix-loop/) | `pr-fix-loop` | Systematic PR fix loop — check all feedback channels, fix code, and loop until done |
 | [SwiftBar](skills/swiftbar/) | `swiftbar` | Create, edit, and debug SwiftBar menu bar plugins for macOS |
 | [Codebase Guide](skills/codebase-guide/) | `codebase-guide` | Beginner-friendly codebase guide: purpose, stack, architecture, data flow, key files |
+| [CLI Review & Fix](skills/cli-review-fix/) | `cli-review-fix` | Send code reviews to CLI tools (Codex, Gemini), critically evaluate findings, auto-fix valid issues |
 
 ## Agents Index
 
@@ -284,6 +285,36 @@ Install globally:
 
 ```bash
 npx skills add aivokone/ak-skills --skill codebase-guide -g
+```
+
+### CLI Review & Fix (`cli-review-fix`)
+
+Send code review requests to external CLI agents (Codex CLI, Gemini CLI),
+critically evaluate their findings, auto-fix valid issues, and present a fix
+report. Automatically detects review context (PR, branch diff, uncommitted
+changes) and dispatches reviews in parallel. Findings are evaluated against
+actual code before fixing — hallucinations and bad suggestions are rejected.
+Results include severity ratings and cross-engine agreement analysis.
+
+Requires at least one CLI installed: Codex CLI (`npm i -g @openai/codex`) or
+Gemini CLI (`npm i -g @anthropic/gemini-cli`).
+
+Source:
+- `skills/cli-review-fix/SKILL.md`
+- `skills/cli-review-fix/references/cli-commands.md`
+- `skills/cli-review-fix/references/review-prompt.md`
+- `skills/cli-review-fix/references/output-format.md`
+
+Install to project scope:
+
+```bash
+npx skills add aivokone/ak-skills --skill cli-review-fix
+```
+
+Install globally:
+
+```bash
+npx skills add aivokone/ak-skills --skill cli-review-fix -g
 ```
 
 ## Agent Catalog
