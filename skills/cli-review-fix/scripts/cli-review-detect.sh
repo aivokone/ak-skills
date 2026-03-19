@@ -7,8 +7,8 @@
 
 set -euo pipefail
 
-# Ensure scratch directory exists
-mkdir -p .agents/scratch
+# Require python3 for JSON output
+command -v python3 >/dev/null 2>&1 || { echo >&2 "python3 is required but not installed."; exit 1; }
 
 # CLI availability
 CODEX_AVAILABLE=$(command -v codex >/dev/null 2>&1 && echo true || echo false)
@@ -18,7 +18,13 @@ GEMINI_AVAILABLE=$(command -v gemini >/dev/null 2>&1 && echo true || echo false)
 DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null \
   | sed 's@^refs/remotes/origin/@@' || true)
 if [ -z "$DEFAULT_BRANCH" ]; then
-  git rev-parse --verify main >/dev/null 2>&1 && DEFAULT_BRANCH="main" || DEFAULT_BRANCH="master"
+  if git rev-parse --verify main >/dev/null 2>&1; then
+    DEFAULT_BRANCH="main"
+  elif git rev-parse --verify master >/dev/null 2>&1; then
+    DEFAULT_BRANCH="master"
+  else
+    DEFAULT_BRANCH=""
+  fi
 fi
 
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
@@ -39,13 +45,18 @@ else
   PR_JSON=$(gh pr view --json number,baseRefName,url,title 2>/dev/null || echo "")
   if [ -n "$PR_JSON" ]; then
     CONTEXT="pr"
-    BASE=$(printf '%s' "$PR_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['baseRefName'])" 2>/dev/null || echo "")
-    PR_NUMBER=$(printf '%s' "$PR_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['number'])" 2>/dev/null || echo "")
-    PR_URL=$(printf '%s' "$PR_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['url'])" 2>/dev/null || echo "")
-    PR_TITLE=$(printf '%s' "$PR_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('title',''))" 2>/dev/null || echo "")
+    # Parse all PR fields in a single python3 call
+    eval "$(printf '%s' "$PR_JSON" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print(f'BASE={d[\"baseRefName\"]}')
+print(f'PR_NUMBER={d[\"number\"]}')
+print(f'PR_URL={d[\"url\"]}')
+print(f'PR_TITLE={d.get(\"title\",\"\")}')" 2>/dev/null || echo "")"
 
   # 2. Branch diff?
-  elif [ -n "$CURRENT_BRANCH" ] && [ "$CURRENT_BRANCH" != "$DEFAULT_BRANCH" ] && \
+  elif [ -n "$DEFAULT_BRANCH" ] && [ -n "$CURRENT_BRANCH" ] && \
+       [ "$CURRENT_BRANCH" != "$DEFAULT_BRANCH" ] && \
        [ -n "$(git log "${DEFAULT_BRANCH}..HEAD" --oneline 2>/dev/null)" ]; then
     CONTEXT="branch"
     BASE="$DEFAULT_BRANCH"
@@ -62,6 +73,9 @@ if [ "$CONTEXT" = "pr" ] || [ "$CONTEXT" = "branch" ]; then
 elif [ "$CONTEXT" = "uncommitted" ]; then
   DIFF_LINES=$( (git diff --cached 2>/dev/null && git diff 2>/dev/null) | wc -l | tr -d ' ')
 fi
+
+# Create scratch directory (after context detection to avoid false git status)
+mkdir -p .agents/scratch
 
 # Output JSON (use env vars to avoid shell quoting issues)
 CODEX_AVAILABLE="$CODEX_AVAILABLE" \

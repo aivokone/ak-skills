@@ -39,9 +39,11 @@ All context detection and CLI availability checks are bundled in a single script
 to minimize permission prompts.
 
 **Script path resolution:** Check in this order:
-1. `~/.claude/skills/cli-review-fix/scripts/` — global install
-2. Other global paths by preference of the agent
+1. `~/.claude/skills/cli-review-fix/scripts/` — global install for Claude Code
+2. `skills/cli-review-fix/scripts/` — repo-local (when running from source)
+3. Other global paths by preference of the agent
 
+Use whichever path exists:
 ```bash
 ~/.claude/skills/cli-review-fix/scripts/cli-review-detect.sh [full]
 ```
