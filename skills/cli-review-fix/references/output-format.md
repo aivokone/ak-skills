@@ -106,7 +106,8 @@ Use judgment — exact matching is impossible since each CLI uses different word
 
 ## Fix Report
 
-Presented after the review phase. Summarizes what was fixed and what wasn't.
+Presented after the review phase. Two parts: a summary table for quick scanning,
+followed by detailed explanations.
 
 ### Fix Report Template
 
@@ -115,39 +116,78 @@ Presented after the review phase. Summarizes what was fixed and what wasn't.
 
 **Context:** PR #42 (feature-branch → main)
 **Engines:** Codex CLI, Gemini CLI
-**Findings:** 6 total → 3 fixed, 1 wontfix, 1 deferred, 1 question
+**Findings:** 7 total → 3 fixed, 2 wontfix, 1 deferred, 1 question
 
-### Fixed
-- [src/auth.ts:L42 validateToken]: FIXED — JWT signature now verified before
-  claims extraction. Verified: `npm test` passes.
-- [src/api/users.ts:L100 deleteUser]: FIXED — Added authorization check.
-  Verified: `npm test` passes.
-- [src/utils/cache.ts:L55 getOrSet]: FIXED — Added stale-while-revalidate
-  pattern to prevent cache stampede.
+### Summary
 
-### Not Fixed
-- [src/config.ts:L12]: WONTFIX — Magic number `3600` is a standard TTL value,
-  already documented in the inline comment.
-- [src/db/query.ts:L200]: DEFERRED — N+1 query is a known issue, tracked
-  in #456. Fixing requires schema changes.
-- [src/api/users.ts:L88]: QUESTION — Gemini flags SQL injection but input
-  is already sanitized by the ORM layer. Is additional escaping needed here?
+| # | Severity | Location | Finding | Source | Status |
+|---|----------|----------|---------|--------|--------|
+| 1 | CRITICAL | src/auth.ts:L42 | JWT signature not verified | AGREED | FIXED |
+| 2 | HIGH | src/api/users.ts:L100 | Missing authorization check | AGREED | FIXED |
+| 3 | HIGH | src/api/users.ts:L88 | SQL injection risk | GEMINI | QUESTION |
+| 4 | MEDIUM | src/utils/cache.ts:L55 | Cache stampede on expiry | CODEX | FIXED |
+| 5 | MEDIUM | src/db/query.ts:L200 | N+1 query pattern | GEMINI | DEFERRED |
+| 6 | LOW | src/config.ts:L12 | Magic number 3600 | CODEX | WONTFIX |
+| 7 | LOW | review-prompt.md:L4 | AI-to-AI framing brittle | GEMINI | WONTFIX |
+
+### Details
+
+**1. src/auth.ts:L42 `validateToken`** — CRITICAL — FIXED
+JWT signature was not verified before extracting claims. Attacker could forge
+arbitrary tokens. Fixed by adding `jwt.verify(token, secret)` before
+`jwt.decode()`. Verified: `npm test` passes.
+
+**2. src/api/users.ts:L100 `deleteUser`** — HIGH — FIXED
+No authorization check before user deletion. Added `requireAdmin(req)` guard.
+Verified: `npm test` passes.
+
+**3. src/api/users.ts:L88 `updateUser`** — HIGH — QUESTION
+Gemini flags SQL injection via unsanitized input. However, the input is already
+parameterized by the ORM layer (`prisma.user.update`). Is additional escaping
+needed here, or is the ORM sufficient?
+
+**4. src/utils/cache.ts:L55 `getOrSet`** — MEDIUM — FIXED
+Cache stampede risk on key expiry under high concurrency. Added
+stale-while-revalidate pattern with a 30s grace window.
+
+**5. src/db/query.ts:L200 `buildQuery`** — MEDIUM — DEFERRED
+N+1 query pattern is a known issue (tracked in #456). Fixing requires schema
+changes and a migration — out of scope for this review pass.
+
+**6. src/config.ts:L12** — LOW — WONTFIX
+Magic number `3600` is a standard TTL in seconds (1 hour). Already documented
+in the inline comment. Extracting to a constant adds indirection without
+improving clarity.
+
+**7. review-prompt.md:L4** — LOW — WONTFIX
+AI-to-AI framing prefix is a tested prompting pattern. If a future model
+handles it differently, the prompt can be updated in the reference file.
 ```
+
+### Source Column Values
+
+| Value | Meaning |
+|---|---|
+| AGREED | Both engines flagged this issue (higher confidence) |
+| CODEX | Only Codex CLI flagged this |
+| GEMINI | Only Gemini CLI flagged this |
+| (engine name) | When only one engine was used, show its name |
 
 ### Fix Statuses
 
 | Status | Meaning | Required Info |
 |---|---|---|
-| FIXED | Issue resolved in code | What was changed + verification (test command or objective check) |
-| WONTFIX | Intentionally not fixing | Reason (cite docs, conventions, or explain why it's not an issue) |
+| FIXED | Issue resolved in code | What was changed + verification |
+| WONTFIX | Intentionally not fixing | Reason (why it's not an issue or is intentional) |
 | DEFERRED | Valid but not fixing now | Why (test failure, tracked issue, needs design decision) |
 | QUESTION | Needs human decision | Specific question for the user to answer |
 
-### Fix Report Summary Line
+### Report Structure Rules
 
-Always include a summary line at the top:
-```
-**Findings:** N total → X fixed, Y wontfix, Z deferred, W question
-```
-
-This gives the user an instant overview before reading details.
+1. **Summary table first** — one row per finding, scannable at a glance
+2. **Details second** — numbered to match the table, with full context
+3. **FIXED details** include: what was wrong, what was changed, verification
+4. **WONTFIX details** include: why the finding was rejected (hallucination,
+   intentional design, already handled)
+5. **QUESTION details** include: the specific question and enough context for
+   the user to decide

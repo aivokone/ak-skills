@@ -24,48 +24,52 @@ re-review loops.
 Check CLI availability before running. If a requested CLI is missing, show
 install instructions and continue with any other available CLIs.
 
-| CLI | Check | Auth | Install |
-|---|---|---|---|
-| Codex | `command -v codex` | `OPENAI_API_KEY` env var | `npm i -g @openai/codex` |
-| Gemini | `command -v gemini` | Google auth (run `gemini` once) | `npm i -g @anthropic/gemini-cli` |
+| CLI | Check | Auth |
+|---|---|---|
+| Codex | `command -v codex` | `OPENAI_API_KEY` env var |
+| Gemini | `command -v gemini` | Google auth (run `gemini` once) |
 
-If neither CLI is available, inform the user with install instructions for both
-and stop.
+If neither CLI is available, inform the user and point to the install links:
+- Codex CLI: https://github.com/openai/codex
+- Gemini CLI: https://github.com/google-gemini/gemini-cli
 
 ## Context Detection
 
 Detect what to review automatically. Follow this priority order — use the first
 match:
 
+### Detecting the Default Branch
+
+Before the decision tree, detect the default branch:
+```bash
+DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+[ -z "$DEFAULT_BRANCH" ] && DEFAULT_BRANCH=$(git rev-parse --verify main 2>/dev/null && echo main || echo master)
+```
+
 ### Decision Tree
 
 ```
-1. PR?
-   gh pr view --json number,baseRefName,url,title 2>/dev/null
-   → success: CONTEXT = "pr", base = baseRefName
+0. Detect default branch (see above) → DEFAULT_BRANCH
 
-2. Branch diff?
-   git branch --show-current → not main/master
-   git log main..HEAD --oneline → non-empty
-   → CONTEXT = "branch", base = main
-
-3. Uncommitted changes?
-   git status --porcelain → non-empty
-   → CONTEXT = "uncommitted"
-
-4. Full codebase?
+1. Full codebase?
    User prompt contains "full codebase", "full review", or similar
    → CONTEXT = "full"
 
+2. PR?
+   gh pr view --json number,baseRefName,url,title 2>/dev/null
+   → success: CONTEXT = "pr", base = baseRefName
+
+3. Branch diff?
+   git branch --show-current → not DEFAULT_BRANCH
+   git log $DEFAULT_BRANCH..HEAD --oneline → non-empty
+   → CONTEXT = "branch", base = DEFAULT_BRANCH
+
+4. Uncommitted changes?
+   git status --porcelain → non-empty
+   → CONTEXT = "uncommitted"
+
 5. Nothing to review
    → Inform user, suggest making changes or specifying scope, stop
-```
-
-### Detecting the Default Branch
-
-Use `main` as default. If `main` doesn't exist, try `master`:
-```bash
-git rev-parse --verify main 2>/dev/null && echo main || echo master
 ```
 
 ## Execution Flow
@@ -118,18 +122,13 @@ Gemini uses `-p` prompt mode. Load the review prompt from
 | Context | Command |
 |---|---|
 | PR / Branch | `git diff <base>...HEAD \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
-| Uncommitted | `git diff \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
+| Uncommitted | `(git diff --cached && git diff) \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
 | Full codebase | `gemini --all-files -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
 
 Key flags:
 - `-p` — non-interactive (critical, prevents hanging)
 - `--sandbox` — safe execution
 - `--all-files` — full codebase context
-
-For uncommitted changes, combine staged and unstaged:
-```bash
-(git diff --cached && git diff) | gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md
-```
 
 ## Critical Evaluation
 
@@ -169,6 +168,8 @@ Present a single fix report to the user after all fixes are applied. Load
 
 ### Format
 
+Two parts: a **summary table** for quick scanning, then **numbered details**.
+
 ```markdown
 ## CLI Review Fix Report
 
@@ -176,14 +177,25 @@ Present a single fix report to the user after all fixes are applied. Load
 **Engines:** [Codex CLI, Gemini CLI]
 **Findings:** N total → X fixed, Y wontfix, Z deferred, W question
 
-### Fixed
-- [file.ext:L10 Symbol]: FIXED — description of change. Verified: `test cmd` passes.
+### Summary
 
-### Not Fixed
-- [file.ext:L42 fn]: WONTFIX — reason (e.g., intentional design, already handled)
-- [file.ext:L100 class]: DEFERRED — reason (e.g., tracked in #123, tests fail)
-- [file.ext:L200 method]: QUESTION — question for the user
+| # | Severity | Location | Finding | Source | Status |
+|---|----------|----------|---------|--------|--------|
+| 1 | CRITICAL | file.ts:L42 | Issue description | AGREED | FIXED |
+| 2 | HIGH | file.ts:L100 | Issue description | CODEX | WONTFIX |
+| ... | ... | ... | ... | ... | ... |
+
+### Details
+
+**1. file.ts:L42 `symbol`** — CRITICAL — FIXED
+What was wrong, what was changed, verification result.
+
+**2. file.ts:L100 `symbol`** — HIGH — WONTFIX
+Why this was rejected (hallucination, intentional design, etc).
 ```
+
+Source column: `AGREED` (both engines), `CODEX` (Codex only), `GEMINI`
+(Gemini only), or the engine name when only one was used.
 
 ### Fix Statuses
 

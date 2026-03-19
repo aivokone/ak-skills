@@ -28,7 +28,6 @@ Review is inherently read-only — no `--sandbox` needed.
 
 ### Prerequisites
 
-- **Install:** `npm install -g @openai/codex`
 - **Check:** `command -v codex`
 - **Auth:** `OPENAI_API_KEY` environment variable must be set
 - **Verify:** `codex --version`
@@ -37,7 +36,7 @@ Review is inherently read-only — no `--sandbox` needed.
 
 | Problem | Solution |
 |---|---|
-| `command not found: codex` | `npm install -g @openai/codex` |
+| `command not found: codex` | Install from https://github.com/openai/codex |
 | Auth error | Set `OPENAI_API_KEY` or run `codex auth` |
 | Timeout | Large repos may need more time — wait for completion |
 | Empty output file | Check that the review produced findings; `-o` only writes when there's output |
@@ -53,14 +52,9 @@ Gemini uses generic `-p` prompt mode. Diffs are piped via stdin; full codebase u
 | Context | Command |
 |---|---|
 | PR | `git diff <base>...HEAD \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
-| Branch diff | `git diff main...HEAD \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
-| Uncommitted | `git diff \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
+| Branch diff | `git diff <default-branch>...HEAD \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
+| Uncommitted | `(git diff --cached && git diff) \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
 | Full codebase | `gemini --all-files -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
-
-For uncommitted changes, combine staged and unstaged if needed:
-```bash
-(git diff --cached && git diff) | gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md
-```
 
 ### Key Flags
 
@@ -78,7 +72,6 @@ Output goes to stdout — capture with `>` redirection.
 
 ### Prerequisites
 
-- **Install:** `npm install -g @anthropic/gemini-cli`
 - **Check:** `command -v gemini`
 - **Auth:** Run `gemini` interactively once to complete Google authentication
 - **Verify:** `gemini -p "What is 2+2?"`
@@ -87,7 +80,7 @@ Output goes to stdout — capture with `>` redirection.
 
 | Problem | Solution |
 |---|---|
-| `command not found: gemini` | `npm install -g @anthropic/gemini-cli` |
+| `command not found: gemini` | Install from https://github.com/google-gemini/gemini-cli |
 | Auth error / "Not authenticated" | Run `gemini` interactively to authenticate |
 | Hangs indefinitely | Missing `-p` flag — Gemini waits for interactive input without it |
 | Rate limits | Wait 1–5 minutes, then retry |

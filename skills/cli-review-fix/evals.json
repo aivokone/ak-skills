@@ -81,7 +81,7 @@
     "prompt": "/cli-review-fix codex (codex is not installed)",
     "expectations": [
       "Checks command -v codex and finds it missing",
-      "Shows helpful error with installation instructions (npm i -g @openai/codex)",
+      "Shows helpful error pointing to install instructions",
       "Mentions OPENAI_API_KEY requirement",
       "Does not attempt to run the missing CLI"
     ]

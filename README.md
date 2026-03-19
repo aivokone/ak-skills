@@ -296,8 +296,8 @@ changes) and dispatches reviews in parallel. Findings are evaluated against
 actual code before fixing — hallucinations and bad suggestions are rejected.
 Results include severity ratings and cross-engine agreement analysis.
 
-Requires at least one CLI installed: Codex CLI (`npm i -g @openai/codex`) or
-Gemini CLI (`npm i -g @anthropic/gemini-cli`).
+Requires at least one CLI installed: Codex CLI (https://github.com/openai/codex) or
+Gemini CLI (https://github.com/google-gemini/gemini-cli).
 
 Source:
 - `skills/cli-review-fix/SKILL.md`
