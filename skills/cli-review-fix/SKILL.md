@@ -33,26 +33,40 @@ If neither CLI is available, inform the user and point to the install links:
 - Codex CLI: https://github.com/openai/codex
 - Gemini CLI: https://github.com/google-gemini/gemini-cli
 
+## Detect Script
+
+All context detection and CLI availability checks are bundled in a single script
+to minimize permission prompts.
+
+**Script path resolution:** Check in this order:
+1. `~/.claude/skills/cli-review-fix/scripts/` — global install
+2. Other global paths by preference of the agent
+
+```bash
+~/.claude/skills/cli-review-fix/scripts/cli-review-detect.sh [full]
+```
+
+Pass `full` as argument when the user explicitly requests a full codebase review.
+
+**Output:** JSON with fields:
+- `codex`, `gemini` — boolean CLI availability
+- `context` — `"pr"`, `"branch"`, `"uncommitted"`, `"full"`, or `"none"`
+- `base` — base branch for diff (empty when not applicable)
+- `current_branch`, `default_branch` — branch info
+- `diff_lines` — diff size estimate (for large diff warnings)
+- `pr_number`, `pr_url`, `pr_title` — PR metadata (empty when no PR)
+
+The script also creates `.agents/scratch/` for output files.
+
 ## Context Detection
 
-Detect what to review automatically. Follow this priority order — use the first
-match:
-
-### Detecting the Default Branch
-
-Before the decision tree, detect the default branch:
-```bash
-DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-[ -z "$DEFAULT_BRANCH" ] && DEFAULT_BRANCH=$(git rev-parse --verify main 2>/dev/null && echo main || echo master)
-```
-
-### Decision Tree
+The detect script implements this decision tree (priority order):
 
 ```
-0. Detect default branch (see above) → DEFAULT_BRANCH
+0. Detect default branch (git symbolic-ref or main/master fallback)
 
 1. Full codebase?
-   User prompt contains "full codebase", "full review", or similar
+   "full" argument passed to detect script
    → CONTEXT = "full"
 
 2. PR?
@@ -60,8 +74,7 @@ DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@
    → success: CONTEXT = "pr", base = baseRefName
 
 3. Branch diff?
-   git branch --show-current → not DEFAULT_BRANCH
-   git log $DEFAULT_BRANCH..HEAD --oneline → non-empty
+   current branch ≠ DEFAULT_BRANCH, commits ahead
    → CONTEXT = "branch", base = DEFAULT_BRANCH
 
 4. Uncommitted changes?
@@ -69,25 +82,26 @@ DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@
    → CONTEXT = "uncommitted"
 
 5. Nothing to review
-   → Inform user, suggest making changes or specifying scope, stop
+   → CONTEXT = "none"
 ```
 
 ## Execution Flow
 
 ### Phase 1: Review
 
-1. **Parse arguments** — determine which CLIs to run (default: all available)
-2. **Check availability** — run `command -v codex` and/or `command -v gemini`
-3. **Validate** — if specific CLI requested but unavailable, error with install
-   instructions; if no CLIs available at all, stop
-4. **Detect context** — follow the decision tree above
-5. **Report context** — tell the user what was detected (e.g., "Detected PR #42,
+1. **Detect** — run `cli-review-detect.sh` (or `cli-review-detect.sh full` if
+   user requested full codebase review). Parse the JSON output.
+2. **Validate** — check `codex`/`gemini` fields against requested CLIs. If a
+   specific CLI was requested but unavailable, show install link and stop. If
+   neither is available, show both install links and stop. If `context` is
+   `"none"`, inform user and stop.
+3. **Report context** — tell the user what was detected (e.g., "Detected PR #42,
    reviewing diff against main")
-6. **Launch CLIs** — run selected CLIs. Prefer sub-agents for parallel execution
-   (see Sub-Agent Recommendation). Fallback: direct Bash calls.
-7. **Collect results** — read output from `/tmp/codex-review.md` and/or
-   `/tmp/gemini-review.md`
-8. **Present review findings** — format per `references/output-format.md` with
+4. **Launch CLIs** — run selected CLIs. Prefer sub-agents for parallel execution
+   (see Sub-Agent Recommendation). Fallback: direct Bash calls. Output goes to
+   `.agents/scratch/codex-review.md` and/or `.agents/scratch/gemini-review.md`.
+5. **Collect results** — read output from `.agents/scratch/`
+6. **Present review findings** — format per `references/output-format.md` with
    severity levels and engine agreement tags
 
 ### Phase 2: Evaluate & Fix
@@ -109,10 +123,10 @@ Codex has a purpose-built `exec review` subcommand:
 
 | Context | Command |
 |---|---|
-| PR | `codex exec review --base <baseRefName> -o /tmp/codex-review.md` |
-| Branch | `codex exec review --base <default-branch> -o /tmp/codex-review.md` |
-| Uncommitted | `codex exec review --uncommitted -o /tmp/codex-review.md` |
-| Full codebase | `codex exec review -o /tmp/codex-review.md` |
+| PR | `codex exec review --base <baseRefName> -o .agents/scratch/codex-review.md` |
+| Branch | `codex exec review --base <default-branch> -o .agents/scratch/codex-review.md` |
+| Uncommitted | `codex exec review --uncommitted -o .agents/scratch/codex-review.md` |
+| Full codebase | `codex exec review -o .agents/scratch/codex-review.md` |
 
 ### Gemini CLI
 
@@ -121,9 +135,9 @@ Gemini uses `-p` prompt mode. Load the review prompt from
 
 | Context | Command |
 |---|---|
-| PR / Branch | `git diff <base>...HEAD \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
-| Uncommitted | `(git diff --cached && git diff) \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
-| Full codebase | `gemini --all-files -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
+| PR / Branch | `git diff <base>...HEAD \| gemini -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
+| Uncommitted | `(git diff --cached && git diff) \| gemini -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
+| Full codebase | `gemini --all-files -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
 
 Key flags:
 - `-p` — non-interactive (critical, prevents hanging)
