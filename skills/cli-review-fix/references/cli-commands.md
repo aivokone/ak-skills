@@ -10,10 +10,10 @@ Codex has a purpose-built `exec review` subcommand with context-aware flags.
 
 | Context | Command |
 |---|---|
-| PR | `codex exec review --base <baseRefName> -o /tmp/codex-review.md` |
-| Branch diff | `codex exec review --base main -o /tmp/codex-review.md` |
-| Uncommitted | `codex exec review --uncommitted -o /tmp/codex-review.md` |
-| Full codebase | `codex exec review -o /tmp/codex-review.md` |
+| PR | `codex exec review --base <baseRefName> -o .agents/scratch/codex-review.md` |
+| Branch diff | `codex exec review --base main -o .agents/scratch/codex-review.md` |
+| Uncommitted | `codex exec review --uncommitted -o .agents/scratch/codex-review.md` |
+| Full codebase | `codex exec review -o .agents/scratch/codex-review.md` |
 
 ### Key Flags
 
@@ -51,10 +51,10 @@ Gemini uses generic `-p` prompt mode. Diffs are piped via stdin; full codebase u
 
 | Context | Command |
 |---|---|
-| PR | `git diff <base>...HEAD \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
-| Branch diff | `git diff <default-branch>...HEAD \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
-| Uncommitted | `(git diff --cached && git diff) \| gemini -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
-| Full codebase | `gemini --all-files -p "<prompt>" --sandbox > /tmp/gemini-review.md` |
+| PR | `git diff <base>...HEAD \| gemini -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
+| Branch diff | `git diff <default-branch>...HEAD \| gemini -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
+| Uncommitted | `(git diff --cached && git diff) \| gemini -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
+| Full codebase | `gemini --all-files -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
 
 ### Key Flags
 

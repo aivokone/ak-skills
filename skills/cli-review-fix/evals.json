@@ -17,7 +17,7 @@
     "expectations": [
       "Only runs Codex CLI, not Gemini",
       "Uses codex exec review with appropriate context flags (--base or --uncommitted)",
-      "Captures output via -o flag to /tmp/codex-review.md",
+      "Captures output via -o flag to .agents/scratch/codex-review.md",
       "Critically evaluates findings before fixing",
       "Presents fix report with statuses"
     ]
@@ -145,6 +145,16 @@
       "Delegates CLI calls to separate sub-agents for parallel execution",
       "Sub-agents return structured findings, not raw CLI output",
       "Main context receives concise results without large CLI output bloat"
+    ]
+  },
+  {
+    "name": "Detect script used for context detection",
+    "prompt": "/cli-review-fix",
+    "expectations": [
+      "Runs cli-review-detect.sh to detect context and CLI availability in one call",
+      "Parses the JSON output for context, base branch, and CLI availability",
+      "Uses .agents/scratch/ for CLI output files, not /tmp/",
+      "Does not run separate command -v, gh pr view, git log commands manually"
     ]
   }
 ]
