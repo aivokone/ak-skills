@@ -1,7 +1,7 @@
 # Review Prompt Templates
 
-Prompt templates sent to Gemini CLI. Codex CLI has built-in review logic via
-`exec review` and does not need a custom prompt for standard contexts.
+Prompt templates sent to Gemini CLI. Codex diff reviews use
+`references/codex-review-prompt.md` via `scripts/cli-review-codex.sh`.
 
 ## Diff Review Prompt
 

@@ -1,7 +1,7 @@
 ---
 name: cli-review-fix
 disable-model-invocation: true
-description: "Send code review requests to external CLI tools (Codex CLI, Gemini CLI), critically evaluate findings, fix valid issues, and present a fix report. Auto-detects context (PR, branch, uncommitted changes). Run /cli-review-fix to launch all available CLIs, or /cli-review-fix codex for a specific one."
+description: "Send code review requests to external CLI tools (Codex CLI, Gemini CLI), critically evaluate findings, fix valid issues, and present a fix report. Auto-detects context (PR, branch, uncommitted changes). Use the bundled Codex diff-review wrapper for PRs and branch diffs so Codex stays focused on the actual patch. Run /cli-review-fix to launch all available CLIs, or /cli-review-fix codex for a specific one."
 ---
 
 # CLI Review & Fix
@@ -33,19 +33,23 @@ If neither CLI is available, inform the user and point to the install links:
 - Codex CLI: https://github.com/openai/codex
 - Gemini CLI: https://github.com/google-gemini/gemini-cli
 
-## Detect Script
+## Scripts
 
-All context detection and CLI availability checks are bundled in a single script
-to minimize permission prompts.
+The skill bundles small scripts for context detection and Codex invocation.
+Prefer them over hand-written shell snippets so review behavior stays
+predictable.
 
 **Script path resolution:** Check in this order:
-1. `~/.claude/skills/cli-review-fix/scripts/` — global install for Claude Code
-2. `skills/cli-review-fix/scripts/` — repo-local (when running from source)
-3. Other global paths by preference of the agent
+1. `.agents/skills/cli-review-fix/scripts/` — project-local install
+2. `~/.claude/skills/cli-review-fix/scripts/` — global install for Claude Code
+3. `skills/cli-review-fix/scripts/` — repo-local (when running from source)
+4. Other global paths by preference of the agent
 
-Use whichever path exists:
+Use whichever path exists.
+
+**Detect script:**
 ```bash
-~/.claude/skills/cli-review-fix/scripts/cli-review-detect.sh [full]
+<resolved>/cli-review-detect.sh [full]
 ```
 
 Pass `full` as argument when the user explicitly requests a full codebase review.
@@ -59,6 +63,23 @@ Pass `full` as argument when the user explicitly requests a full codebase review
 - `pr_number`, `pr_url`, `pr_title` — PR metadata (empty when no PR)
 
 The script also creates `.agents/scratch/` for output files.
+
+**Codex runner:**
+```bash
+<resolved>/cli-review-codex.sh <pr|branch|uncommitted|full> [base]
+```
+
+Use it for every Codex review invocation. For diff-based contexts it builds a
+strict stdin prompt from `references/codex-review-prompt.md`, appends the
+actual diff, and runs `codex exec -`. This avoids the current Codex CLI
+behavior where `exec review --base ...` cannot be paired with custom
+instructions and tends to over-explore the repository. For explicit full
+codebase reviews, the wrapper falls back to `codex exec review`.
+
+If deeper debugging is needed, set `CLI_REVIEW_DEBUG_JSON=1` before running the
+Codex wrapper. It will write JSONL events to
+`.agents/scratch/codex-review.jsonl` and stderr to
+`.agents/scratch/codex-review.stderr`.
 
 ## Context Detection
 
@@ -100,8 +121,10 @@ The detect script implements this decision tree (priority order):
 3. **Report context** — tell the user what was detected (e.g., "Detected PR #42,
    reviewing diff against main")
 4. **Launch CLIs** — run selected CLIs. Prefer sub-agents for parallel execution
-   (see Sub-Agent Recommendation). Fallback: direct Bash calls. Output goes to
-   `.agents/scratch/codex-review.md` and/or `.agents/scratch/gemini-review.md`.
+   (see Sub-Agent Recommendation). Fallback: direct Bash calls. For Codex, call
+   `cli-review-codex.sh` rather than assembling the command manually. Output
+   goes to `.agents/scratch/codex-review.md` and/or
+   `.agents/scratch/gemini-review.md`.
 5. **Collect results** — read output from `.agents/scratch/`
 6. **Present review findings** — format per `references/output-format.md` with
    severity levels and engine agreement tags
@@ -121,14 +144,16 @@ troubleshooting.
 
 ### Codex CLI
 
-Codex has a purpose-built `exec review` subcommand:
+Use the wrapper script, not raw `codex exec review`, for diff-based reviews.
+The wrapper keeps Codex focused on the diff and only uses built-in review for
+explicit full codebase runs.
 
 | Context | Command |
 |---|---|
-| PR | `codex exec review --base <baseRefName> -o .agents/scratch/codex-review.md` |
-| Branch | `codex exec review --base <default-branch> -o .agents/scratch/codex-review.md` |
-| Uncommitted | `codex exec review --uncommitted -o .agents/scratch/codex-review.md` |
-| Full codebase | `codex exec review -o .agents/scratch/codex-review.md` |
+| PR | `cli-review-codex.sh pr <baseRefName>` |
+| Branch | `cli-review-codex.sh branch <default-branch>` |
+| Uncommitted | `cli-review-codex.sh uncommitted` |
+| Full codebase | `cli-review-codex.sh full` |
 
 ### Gemini CLI
 
@@ -274,6 +299,7 @@ context. The skill works either way.
 | No reviewable context | Inform user; suggest making changes or specifying scope |
 | Large diff (>3000 lines) | Warn user; offer to scope to specific directories or file types |
 | CLI times out | Report timeout; present any partial results |
+| Codex diff review drifts or hangs | Use `cli-review-codex.sh` instead of raw `codex exec review --base ...` |
 | CLI returns no findings | Report "no findings" for that engine; skip fix phase |
 | User says "full codebase" | Skip context detection; use full codebase mode |
 | All findings are hallucinations | WONTFIX each with explanation; no code changes made |
@@ -285,6 +311,7 @@ context. The skill works either way.
 
 Load only what you need for the current step:
 - CLI flags and troubleshooting → `references/cli-commands.md`
+- Codex diff review prompt → `references/codex-review-prompt.md`
 - Gemini review prompt template → `references/review-prompt.md`
 - Result and fix report formatting → `references/output-format.md`
 

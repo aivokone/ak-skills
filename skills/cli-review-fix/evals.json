@@ -3,7 +3,7 @@
     "name": "Default invocation launches all available CLIs",
     "prompt": "/cli-review-fix",
     "expectations": [
-      "Checks availability of both codex and gemini CLIs via command -v",
+      "Detects context and CLI availability via cli-review-detect.sh",
       "Detects review context automatically (PR, branch, uncommitted)",
       "Launches available CLIs in parallel using separate Bash calls or sub-agents",
       "Presents consolidated review results with severity indicators",
@@ -16,7 +16,8 @@
     "prompt": "/cli-review-fix codex",
     "expectations": [
       "Only runs Codex CLI, not Gemini",
-      "Uses codex exec review with appropriate context flags (--base or --uncommitted)",
+      "Uses cli-review-codex.sh instead of raw codex exec review for diff-based contexts",
+      "Pipes a constrained diff-review prompt into codex exec - for PR, branch, and uncommitted contexts",
       "Captures output via -o flag to .agents/scratch/codex-review.md",
       "Critically evaluates findings before fixing",
       "Presents fix report with statuses"
@@ -40,7 +41,7 @@
     "expectations": [
       "Detects PR via gh pr view --json number,baseRefName",
       "Uses PR base branch for the diff",
-      "For Codex: uses codex exec review --base <baseRefName>",
+      "For Codex: runs cli-review-codex.sh pr <baseRefName>",
       "For Gemini: pipes git diff <base>...HEAD to gemini -p",
       "Reports PR number in the output header"
     ]
@@ -61,7 +62,7 @@
     "expectations": [
       "Detects no PR and no branch diff",
       "Detects uncommitted changes via git status --porcelain",
-      "For Codex: uses codex exec review --uncommitted",
+      "For Codex: runs cli-review-codex.sh uncommitted",
       "For Gemini: pipes git diff to gemini",
       "Reports 'uncommitted changes' in the output header"
     ]
@@ -155,6 +156,16 @@
       "Parses the JSON output for context, base branch, and CLI availability",
       "Uses .agents/scratch/ for CLI output files, not /tmp/",
       "Does not run separate command -v, gh pr view, git log commands manually"
+    ]
+  },
+  {
+    "name": "Codex diff wrapper used for focused reviews",
+    "prompt": "/cli-review-fix codex (user is on a branch diff)",
+    "expectations": [
+      "Loads references/codex-review-prompt.md for Codex diff reviews",
+      "Runs cli-review-codex.sh branch <base> instead of codex exec review --base <base>",
+      "Keeps Codex focused on the diff rather than scanning the whole repository",
+      "Mentions CLI_REVIEW_DEBUG_JSON=1 as the debug path when Codex still misbehaves"
     ]
   }
 ]

@@ -299,8 +299,16 @@ Results include severity ratings and cross-engine agreement analysis.
 Requires at least one CLI installed: Codex CLI (https://github.com/openai/codex) or
 Gemini CLI (https://github.com/google-gemini/gemini-cli).
 
+For Codex diff reviews, the skill uses a bundled wrapper script that pipes the
+actual diff into `codex exec -` with a constrained review prompt. This keeps
+Codex focused on the patch instead of the whole repository and avoids the
+current `exec review --base ...` prompt-steering limitation.
+
 Source:
 - `skills/cli-review-fix/SKILL.md`
+- `skills/cli-review-fix/scripts/cli-review-detect.sh`
+- `skills/cli-review-fix/scripts/cli-review-codex.sh`
+- `skills/cli-review-fix/references/codex-review-prompt.md`
 - `skills/cli-review-fix/references/cli-commands.md`
 - `skills/cli-review-fix/references/review-prompt.md`
 - `skills/cli-review-fix/references/output-format.md`

@@ -4,25 +4,27 @@ Exact commands for each CLI tool, grouped by review context.
 
 ## Codex CLI
 
-Codex has a purpose-built `exec review` subcommand with context-aware flags.
+Use the bundled wrapper script for Codex reviews. For diff-based contexts the
+wrapper feeds a constrained prompt plus the actual diff into `codex exec -`.
+For explicit full codebase reviews it falls back to `codex exec review`.
 
 ### Commands by Context
 
 | Context | Command |
 |---|---|
-| PR | `codex exec review --base <baseRefName> -o .agents/scratch/codex-review.md` |
-| Branch diff | `codex exec review --base main -o .agents/scratch/codex-review.md` |
-| Uncommitted | `codex exec review --uncommitted -o .agents/scratch/codex-review.md` |
-| Full codebase | `codex exec review -o .agents/scratch/codex-review.md` |
+| PR | `cli-review-codex.sh pr <baseRefName>` |
+| Branch diff | `cli-review-codex.sh branch <default-branch>` |
+| Uncommitted | `cli-review-codex.sh uncommitted` |
+| Full codebase | `cli-review-codex.sh full` |
 
-### Key Flags
+### Wrapper Behavior
 
-| Flag | Purpose |
+| Behavior | Details |
 |---|---|
-| `--base <ref>` | Compare against a base branch or commit |
-| `--uncommitted` | Review uncommitted changes (staged + unstaged) |
-| `-o <file>` | Write last message to file for capture |
-| `--json` | Machine-readable JSON output |
+| Diff contexts | Builds a prompt from `references/codex-review-prompt.md`, appends the diff, then runs `codex exec - -o .agents/scratch/codex-review.md` |
+| Full codebase | Runs `codex exec review -o .agents/scratch/codex-review.md` |
+| Debug mode | `CLI_REVIEW_DEBUG_JSON=1` adds `--json` and writes `.agents/scratch/codex-review.jsonl` plus `.agents/scratch/codex-review.stderr` |
+| Output file | Always writes the last Codex message to `.agents/scratch/codex-review.md` |
 
 Review is inherently read-only — no `--sandbox` needed.
 
@@ -38,6 +40,8 @@ Review is inherently read-only — no `--sandbox` needed.
 |---|---|
 | `command not found: codex` | Install from https://github.com/openai/codex |
 | Auth error | Set `OPENAI_API_KEY` or run `codex auth` |
+| Diff review hangs or wanders | Use the wrapper script, not raw `codex exec review --base ...` |
+| Need deeper Codex debugging | Re-run with `CLI_REVIEW_DEBUG_JSON=1` and inspect `.agents/scratch/codex-review.jsonl` |
 | Timeout | Large repos may need more time — wait for completion |
 | Empty output file | Check that the review produced findings; `-o` only writes when there's output |
 
