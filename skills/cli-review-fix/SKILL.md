@@ -158,16 +158,17 @@ explicit full codebase runs.
 
 ### Gemini CLI
 
-Gemini uses `-p` prompt mode. Load the review prompt from
-`references/review-prompt.md`.
+Gemini uses `-p` prompt mode with `--model pro` for better reasoning accuracy.
+Load the review prompt from `references/review-prompt.md`.
 
 | Context | Command |
 |---|---|
-| PR / Branch | `git diff <base>...HEAD \| gemini -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
-| Uncommitted | `(git diff --cached && git diff) \| gemini -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
-| Full codebase | `gemini --all-files -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
+| PR / Branch | `git diff <base>...HEAD \| gemini --model pro -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
+| Uncommitted | `(git diff --cached && git diff) \| gemini --model pro -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
+| Full codebase | `gemini --all-files --model pro -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
 
 Key flags:
+- `--model pro` — use Pro model for reviews (better reasoning, fewer hallucinations than flash)
 - `-p` — non-interactive (critical, prevents hanging)
 - `--sandbox` — safe execution
 - `--all-files` — full codebase context

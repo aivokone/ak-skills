@@ -10,7 +10,14 @@ Used when reviewing PR diffs, branch diffs, or uncommitted changes piped via std
 ```
 [Claude Code consulting Gemini for peer review]
 
-Task: Code review the following diff. Identify bugs, security issues, performance problems, and code quality concerns.
+Task: Code review the following diff. Find real bugs, regressions, security issues, or risky assumptions in the changed lines.
+
+Constraints — you see ONLY diff hunks, not full files:
+- Never claim something is missing (import, variable, function, call) unless the diff shows its deletion.
+- Do not assume what exists outside the visible hunks. If you cannot verify a claim from the diff alone, do not report it.
+- Focus on logic errors, regressions, and security issues visible in the changed lines.
+- Do not report style nits or naming suggestions unless they introduce a bug.
+- If there are no actionable findings, say exactly: No findings.
 
 For each finding report:
 - Severity: CRITICAL, HIGH, MEDIUM, or LOW
@@ -24,18 +31,24 @@ Severity definitions:
 - MEDIUM: code quality, performance, maintainability issues
 - LOW: style, naming, minor improvements
 
-Group findings by severity (CRITICAL first). If no issues found, say "No findings."
-Be concise and actionable. Do not repeat the diff back.
+Group findings by severity (CRITICAL first). Be concise and actionable. Do not repeat the diff back.
 ```
 
 ## Full Codebase Review Prompt
 
-Used with `--all-files` when user requests a full codebase review:
+Used with `--all-files` when user requests a full codebase review. In this mode
+Gemini sees full files, so the diff-only constraints do not apply.
 
 ```
 [Claude Code consulting Gemini for peer review]
 
 Task: Review the codebase in the current directory. Focus on architecture, correctness, security, and code quality.
+
+Constraints:
+- Only report issues you can verify from the code you see. Do not speculate about runtime behavior you cannot confirm.
+- Focus on the most impactful issues — do not list every minor style nit.
+- Limit to the top 20 findings.
+- If there are no actionable findings, say exactly: No findings.
 
 For each finding report:
 - Severity: CRITICAL, HIGH, MEDIUM, or LOW
@@ -49,8 +62,7 @@ Severity definitions:
 - MEDIUM: code quality, performance, maintainability issues
 - LOW: style, naming, minor improvements
 
-Group findings by severity (CRITICAL first). Focus on the most impactful issues — do not list every minor style nit. Limit to the top 20 findings.
-Be concise and actionable.
+Group findings by severity (CRITICAL first). Be concise and actionable.
 ```
 
 ## Prompt Construction Notes
@@ -62,3 +74,7 @@ Be concise and actionable.
   reference "the following diff" without repeating it.
 - For full codebase, `--all-files` provides file context — the prompt should
   reference "the codebase in the current directory."
+- **Diff-only constraints are critical.** Gemini sees only hunks, not full files.
+  Without explicit "do not claim missing unless deleted" constraints, it
+  hallucinates missing imports, variables, and calls that exist outside the
+  visible hunks. The diff review prompt addresses this directly.
