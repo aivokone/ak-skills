@@ -142,10 +142,11 @@
     "name": "Sub-agent delegation when available",
     "prompt": "/cli-review-fix (Agent tool is available)",
     "expectations": [
-      "Considers using sub-agents for CLI execution and/or fix work",
+      "Prefers sub-agents for parallel CLI execution",
       "Delegates CLI calls to separate sub-agents for parallel execution",
       "Sub-agents return structured findings, not raw CLI output",
-      "Main context receives concise results without large CLI output bloat"
+      "Main context receives concise results without large CLI output bloat",
+      "Falls back to main-context run_in_background Bash if sub-agent fails due to permissions"
     ]
   },
   {

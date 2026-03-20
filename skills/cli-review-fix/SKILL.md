@@ -121,7 +121,8 @@ The detect script implements this decision tree (priority order):
 3. **Report context** — tell the user what was detected (e.g., "Detected PR #42,
    reviewing diff against main")
 4. **Launch CLIs** — run selected CLIs. Prefer sub-agents for parallel execution
-   (see Sub-Agent Recommendation). Fallback: direct Bash calls. For Codex, call
+   (see Sub-Agent Recommendation). If sub-agents fail due to permissions, fall
+   back to direct Bash calls with `run_in_background`. For Codex, call
    `cli-review-codex.sh` rather than assembling the command manually. Output
    goes to `.agents/scratch/codex-review.md` and/or
    `.agents/scratch/gemini-review.md`.
@@ -270,8 +271,9 @@ Load `references/output-format.md` for full templates.
 
 ## Sub-Agent Recommendation
 
-When the Agent tool is available, delegate work to sub-agents to protect the
-main context window from large CLI outputs.
+When the Agent tool is available, prefer sub-agents for CLI execution. Each
+CLI review takes minutes, so parallel sub-agents save significant wall-clock
+time.
 
 **Recommended split:**
 
@@ -286,8 +288,16 @@ main context window from large CLI outputs.
 Sub-agents absorb this without bloating the main conversation. Parallel
 execution is also natural — each CLI in its own sub-agent.
 
-**Fallback:** If the Agent tool is not available, run everything in the main
-context. The skill works either way.
+**Permission caveat:** Sub-agents inherit stricter permission defaults and
+cannot prompt the user for interactive approval. If a sub-agent fails because
+Bash permission for the CLI command was denied or timed out, fall back to
+running CLIs from the main context using `run_in_background` for parallelism.
+Pre-configuring CLI permissions in project or user settings (e.g., allowing
+`bash(codex exec:*)` and `bash(gemini:*)`) eliminates this issue.
+
+**Fallback:** If the Agent tool is not available or sub-agents fail due to
+permissions, run everything in the main context. Use `run_in_background` Bash
+calls for parallel CLI execution. The skill works either way.
 
 ## Edge Cases
 
@@ -300,6 +310,7 @@ context. The skill works either way.
 | Large diff (>3000 lines) | Warn user; offer to scope to specific directories or file types |
 | CLI times out | Report timeout; present any partial results |
 | Codex diff review drifts or hangs | Use `cli-review-codex.sh` instead of raw `codex exec review --base ...` |
+| Sub-agent CLI call fails (permissions) | Retry from main context with `run_in_background`; do not abort |
 | CLI returns no findings | Report "no findings" for that engine; skip fix phase |
 | User says "full codebase" | Skip context detection; use full codebase mode |
 | All findings are hallucinations | WONTFIX each with explanation; no code changes made |
