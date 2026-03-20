@@ -49,37 +49,59 @@ Review is inherently read-only — no `--sandbox` needed.
 
 ## Gemini CLI
 
-Gemini uses `-p` prompt mode with `--model pro` for review accuracy. Diffs are
-piped via stdin; full codebase uses `--all-files`.
+Use the bundled wrapper script for Gemini reviews. For PR and branch diff
+contexts the wrapper prefers Google's code-review extension (interactive mode
+with full-file access) when installed. Falls back to rich pipe mode (prompt +
+full changed files + diff) when the extension is unavailable, and for contexts
+the extension does not support (uncommitted, full codebase).
 
 ### Commands by Context
 
 | Context | Command |
 |---|---|
-| PR | `git diff <base>...HEAD \| gemini --model pro -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
-| Branch diff | `git diff <default-branch>...HEAD \| gemini --model pro -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
-| Uncommitted | `(git diff --cached && git diff) \| gemini --model pro -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
-| Full codebase | `gemini --all-files --model pro -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
+| PR | `cli-review-gemini.sh pr <baseRefName>` |
+| Branch diff | `cli-review-gemini.sh branch <default-branch>` |
+| Uncommitted | `cli-review-gemini.sh uncommitted` |
+| Full codebase | `cli-review-gemini.sh full` |
+
+### Wrapper Modes
+
+| Mode | When Used | Details |
+|---|---|---|
+| Extension | PR/branch when `~/.gemini/extensions/code-review/` exists | Runs `gemini "/code-review" --yolo -e code-review`. Gemini can read full files interactively. |
+| Rich pipe | Uncommitted, or PR/branch without extension | Sends prompt + full changed-file contents + diff to `gemini --model pro -p - --sandbox`. Files >500 lines or binary are skipped. |
+| Full codebase | Explicit `full` context | Runs `gemini --all-files --model pro -p "<prompt>" --sandbox` |
+| Fallback | Extension command fails | Falls back to rich pipe with warning |
+
+Output always goes to `.agents/scratch/gemini-review.md`.
+
+### Extension Setup (Optional, Recommended)
+
+```bash
+gemini extensions install https://github.com/gemini-cli-extensions/code-review
+```
+
+The extension uses interactive mode (`--yolo`) so Gemini can read full files,
+check imports, and verify claims — significantly reducing false positives
+compared to raw pipe mode. The wrapper detects the extension automatically.
 
 ### Key Flags
 
 | Flag | Purpose |
 |---|---|
-| `--model pro` | Use Gemini Pro for reviews (default recommendation — better reasoning, fewer false positives) |
-| `--model flash` | Gemini Flash (faster, but higher hallucination rate for code review) |
-| `-p "prompt"` | Non-interactive mode (critical — prevents hanging) |
-| `--sandbox` | Sandboxed execution for safety |
+| `--model pro` | Gemini Pro for raw-pipe reviews (better reasoning, fewer false positives) |
+| `-p -` | Non-interactive mode, read prompt from stdin |
+| `--sandbox` | Sandboxed execution for safety (raw pipe mode) |
+| `--yolo` | Auto-approve tool calls (extension mode) |
+| `-e code-review` | Enable code-review extension |
 | `--all-files` | Include all files in current directory as context |
-| `--output-format text` | Text output (default) |
-| `--output-format json` | JSON output |
-
-Output goes to stdout — capture with `>` redirection.
 
 ### Prerequisites
 
 - **Check:** `command -v gemini`
 - **Auth:** Run `gemini` interactively once to complete Google authentication
 - **Verify:** `gemini -p "What is 2+2?"`
+- **Extension (optional):** `gemini extensions install https://github.com/gemini-cli-extensions/code-review`
 
 ### Troubleshooting
 
@@ -87,17 +109,20 @@ Output goes to stdout — capture with `>` redirection.
 |---|---|
 | `command not found: gemini` | Install from https://github.com/google-gemini/gemini-cli |
 | Auth error / "Not authenticated" | Run `gemini` interactively to authenticate |
-| Hangs indefinitely | Missing `-p` flag — Gemini waits for interactive input without it |
+| Hangs indefinitely | Missing `-p` flag in raw pipe mode — Gemini waits for interactive input |
 | Rate limits | Wait 1–5 minutes, then retry |
 | Large diff truncated | Gemini has context limits — consider scoping to specific directories |
+| Extension not found | Run `gemini extensions install https://github.com/gemini-cli-extensions/code-review` |
+| Extension diffs against wrong base | Extension uses `origin/HEAD`; wrapper warns when this differs from PR base |
+| Extension command fails | Wrapper auto-falls back to rich pipe with stderr warning |
 
 ### Model Selection Guide
 
 | Model | Best For | Speed |
 |---|---|---|
-| `pro` (recommended for reviews) | Code reviews, security audits, architecture decisions | Slower |
+| `pro` (used in raw pipe) | Code reviews, security audits, architecture decisions | Slower |
 | `flash` | Quick questions, large diffs where speed matters | Fast |
+| Extension default | Extension mode — model selected by Gemini CLI auto setting | Varies |
 
-Use `--model pro` for all reviews by default. Gemini only sees piped diff hunks
-(not full files), so the Pro model's stronger reasoning helps avoid false
-positives about "missing" code that exists outside the visible hunks.
+The extension's interactive mode (full-file access) compensates for any model
+differences. For raw pipe mode, `--model pro` is hardcoded in the wrapper.

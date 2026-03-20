@@ -28,9 +28,9 @@
     "prompt": "/cli-review-fix gemini",
     "expectations": [
       "Only runs Gemini CLI, not Codex",
-      "Uses gemini -p with --sandbox flag for safety",
-      "Loads review prompt from references/review-prompt.md",
-      "Pipes diff to gemini stdin for diff-based contexts",
+      "Uses cli-review-gemini.sh wrapper for Gemini reviews",
+      "Prefers code-review extension when installed for PR/branch contexts",
+      "Falls back to rich pipe mode (prompt + full changed files + diff) when extension unavailable",
       "Critically evaluates findings before fixing",
       "Presents fix report with statuses"
     ]
@@ -42,7 +42,7 @@
       "Detects PR via gh pr view --json number,baseRefName",
       "Uses PR base branch for the diff",
       "For Codex: runs cli-review-codex.sh pr <baseRefName>",
-      "For Gemini: pipes git diff <base>...HEAD to gemini -p",
+      "For Gemini: runs cli-review-gemini.sh pr <baseRefName>",
       "Reports PR number in the output header"
     ]
   },
@@ -63,7 +63,7 @@
       "Detects no PR and no branch diff",
       "Detects uncommitted changes via git status --porcelain",
       "For Codex: runs cli-review-codex.sh uncommitted",
-      "For Gemini: pipes git diff to gemini",
+      "For Gemini: runs cli-review-gemini.sh uncommitted",
       "Reports 'uncommitted changes' in the output header"
     ]
   },
@@ -154,7 +154,7 @@
     "prompt": "/cli-review-fix",
     "expectations": [
       "Runs cli-review-detect.sh to detect context and CLI availability in one call",
-      "Parses the JSON output for context, base branch, and CLI availability",
+      "Parses the JSON output for context, base branch, CLI availability, and extension status",
       "Uses .agents/scratch/ for CLI output files, not /tmp/",
       "Does not run separate command -v, gh pr view, git log commands manually"
     ]
@@ -167,6 +167,40 @@
       "Runs cli-review-codex.sh branch <base> instead of codex exec review --base <base>",
       "Keeps Codex focused on the diff rather than scanning the whole repository",
       "Mentions CLI_REVIEW_DEBUG_JSON=1 as the debug path when Codex still misbehaves"
+    ]
+  },
+  {
+    "name": "Gemini extension preferred for diff reviews",
+    "prompt": "/cli-review-fix gemini (code-review extension installed, on a PR)",
+    "expectations": [
+      "Uses cli-review-gemini.sh wrapper instead of raw gemini -p pipe",
+      "Detects code-review extension is installed via detect script or wrapper",
+      "Wrapper runs gemini with /code-review command in interactive mode (--yolo)",
+      "Does NOT pipe diff to stdin — extension handles diffing internally",
+      "Captures output to .agents/scratch/gemini-review.md",
+      "Critically evaluates findings before fixing"
+    ]
+  },
+  {
+    "name": "Gemini extension fallback to rich pipe",
+    "prompt": "/cli-review-fix gemini (code-review extension NOT installed, on a branch diff)",
+    "expectations": [
+      "Uses cli-review-gemini.sh wrapper",
+      "Detects code-review extension is not installed",
+      "Falls back to rich pipe: sends prompt + full changed files + diff to gemini",
+      "Uses --model pro and --sandbox for raw pipe mode",
+      "Captures output to .agents/scratch/gemini-review.md"
+    ]
+  },
+  {
+    "name": "Gemini uncommitted uses rich context",
+    "prompt": "/cli-review-fix gemini (uncommitted changes, extension installed)",
+    "expectations": [
+      "Uses cli-review-gemini.sh wrapper",
+      "Does NOT use code-review extension for uncommitted context",
+      "Sends full contents of changed files alongside the diff in the prompt payload",
+      "Uses --model pro and --sandbox for raw pipe mode",
+      "Skips binary files and files exceeding size limit"
     ]
   }
 ]

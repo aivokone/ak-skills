@@ -13,6 +13,7 @@ command -v python3 >/dev/null 2>&1 || { echo >&2 "python3 is required but not in
 # CLI availability
 CODEX_AVAILABLE=$(command -v codex >/dev/null 2>&1 && echo true || echo false)
 GEMINI_AVAILABLE=$(command -v gemini >/dev/null 2>&1 && echo true || echo false)
+GEMINI_EXT=$([ -d "${HOME}/.gemini/extensions/code-review" ] && echo true || echo false)
 
 # Default branch detection
 DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null \
@@ -80,6 +81,7 @@ mkdir -p .agents/scratch
 # Output JSON (use env vars to avoid shell quoting issues)
 CODEX_AVAILABLE="$CODEX_AVAILABLE" \
 GEMINI_AVAILABLE="$GEMINI_AVAILABLE" \
+GEMINI_EXT="$GEMINI_EXT" \
 CONTEXT="$CONTEXT" \
 BASE="$BASE" \
 CURRENT_BRANCH="$CURRENT_BRANCH" \
@@ -93,6 +95,7 @@ import json, os
 print(json.dumps({
     'codex': os.environ['CODEX_AVAILABLE'] == 'true',
     'gemini': os.environ['GEMINI_AVAILABLE'] == 'true',
+    'gemini_code_review_ext': os.environ['GEMINI_EXT'] == 'true',
     'context': os.environ['CONTEXT'],
     'base': os.environ['BASE'],
     'current_branch': os.environ['CURRENT_BRANCH'],

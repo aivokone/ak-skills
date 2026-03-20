@@ -5,7 +5,12 @@ Prompt templates sent to Gemini CLI. Codex diff reviews use
 
 ## Diff Review Prompt
 
-Used when reviewing PR diffs, branch diffs, or uncommitted changes piped via stdin:
+Used for the **raw-pipe fallback** path when the code-review extension is not
+active. When the extension is installed, its built-in "Principal Software
+Engineer" persona handles prompting and Gemini can read full files interactively.
+
+For raw-pipe contexts, the wrapper sends this prompt + full changed-file contents
++ the diff to `gemini --model pro -p - --sandbox`:
 
 ```
 [Claude Code consulting Gemini for peer review]
@@ -74,7 +79,12 @@ Group findings by severity (CRITICAL first). Be concise and actionable.
   reference "the following diff" without repeating it.
 - For full codebase, `--all-files` provides file context — the prompt should
   reference "the codebase in the current directory."
-- **Diff-only constraints are critical.** Gemini sees only hunks, not full files.
-  Without explicit "do not claim missing unless deleted" constraints, it
-  hallucinates missing imports, variables, and calls that exist outside the
-  visible hunks. The diff review prompt addresses this directly.
+- **Diff-only constraints are critical for raw pipe.** Without explicit "do not
+  claim missing unless deleted" constraints, Gemini hallucinates missing imports,
+  variables, and calls that exist outside the visible hunks.
+- **Rich context mode** (wrapper sends full changed files alongside the diff)
+  mitigates this by giving Gemini the full file content. The diff-only
+  constraints still apply as a safety net but are less likely to trigger.
+- **Extension mode bypasses this prompt entirely.** The code-review extension
+  runs Gemini interactively — it can read files on demand and uses its own
+  built-in review persona.

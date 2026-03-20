@@ -1,7 +1,7 @@
 ---
 name: cli-review-fix
 disable-model-invocation: true
-description: "Send code review requests to external CLI tools (Codex CLI, Gemini CLI), critically evaluate findings, fix valid issues, and present a fix report. Auto-detects context (PR, branch, uncommitted changes). Use the bundled Codex diff-review wrapper for PRs and branch diffs so Codex stays focused on the actual patch. Run /cli-review-fix to launch all available CLIs, or /cli-review-fix codex for a specific one."
+description: "Send code review requests to external CLI tools (Codex CLI, Gemini CLI), critically evaluate findings, fix valid issues, and present a fix report. Auto-detects context (PR, branch, uncommitted changes). Uses bundled wrapper scripts for both Codex and Gemini. For Gemini, prefers the code-review extension (interactive mode with full-file access) when installed. Run /cli-review-fix to launch all available CLIs, or /cli-review-fix codex for a specific one."
 ---
 
 # CLI Review & Fix
@@ -28,6 +28,11 @@ install instructions and continue with any other available CLIs.
 |---|---|---|
 | Codex | `command -v codex` | `OPENAI_API_KEY` env var |
 | Gemini | `command -v gemini` | Google auth (run `gemini` once) |
+| Gemini code-review ext (optional) | `~/.gemini/extensions/code-review/` exists | Included with Gemini auth |
+
+The extension is optional but recommended — it lets Gemini read full files
+during review, significantly reducing false positives. Install:
+`gemini extensions install https://github.com/gemini-cli-extensions/code-review`
 
 If neither CLI is available, inform the user and point to the install links:
 - Codex CLI: https://github.com/openai/codex
@@ -56,6 +61,7 @@ Pass `full` as argument when the user explicitly requests a full codebase review
 
 **Output:** JSON with fields:
 - `codex`, `gemini` — boolean CLI availability
+- `gemini_code_review_ext` — boolean, code-review extension installed
 - `context` — `"pr"`, `"branch"`, `"uncommitted"`, `"full"`, or `"none"`
 - `base` — base branch for diff (empty when not applicable)
 - `current_branch`, `default_branch` — branch info
@@ -80,6 +86,20 @@ If deeper debugging is needed, set `CLI_REVIEW_DEBUG_JSON=1` before running the
 Codex wrapper. It will write JSONL events to
 `.agents/scratch/codex-review.jsonl` and stderr to
 `.agents/scratch/codex-review.stderr`.
+
+**Gemini runner:**
+```bash
+<resolved>/cli-review-gemini.sh <pr|branch|uncommitted|full> [base]
+```
+
+Use it for every Gemini review invocation. For PR and branch contexts, the
+wrapper prefers Google's code-review extension when installed — this runs Gemini
+in interactive mode where it can read full files, significantly reducing false
+positives. When the extension is not installed, or for uncommitted/full contexts,
+the wrapper falls back to rich pipe mode: sends the review prompt + full contents
+of changed files + the diff to `gemini --model pro -p - --sandbox`.
+
+Stderr goes to `.agents/scratch/gemini-review.stderr`.
 
 ## Context Detection
 
@@ -158,20 +178,17 @@ explicit full codebase runs.
 
 ### Gemini CLI
 
-Gemini uses `-p` prompt mode with `--model pro` for better reasoning accuracy.
-Load the review prompt from `references/review-prompt.md`.
+Use the wrapper script for Gemini reviews. For PR and branch contexts it prefers
+the code-review extension (interactive mode with full-file access) when
+installed. Falls back to rich pipe mode for other contexts or when the extension
+is not available.
 
 | Context | Command |
 |---|---|
-| PR / Branch | `git diff <base>...HEAD \| gemini --model pro -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
-| Uncommitted | `(git diff --cached && git diff) \| gemini --model pro -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
-| Full codebase | `gemini --all-files --model pro -p "<prompt>" --sandbox > .agents/scratch/gemini-review.md` |
-
-Key flags:
-- `--model pro` — use Pro model for reviews (better reasoning, fewer hallucinations than flash)
-- `-p` — non-interactive (critical, prevents hanging)
-- `--sandbox` — safe execution
-- `--all-files` — full codebase context
+| PR | `cli-review-gemini.sh pr <baseRefName>` |
+| Branch | `cli-review-gemini.sh branch <default-branch>` |
+| Uncommitted | `cli-review-gemini.sh uncommitted` |
+| Full codebase | `cli-review-gemini.sh full` |
 
 ## Critical Evaluation
 
@@ -312,6 +329,8 @@ calls for parallel CLI execution. The skill works either way.
 | CLI times out | Report timeout; present any partial results |
 | Codex diff review drifts or hangs | Use `cli-review-codex.sh` instead of raw `codex exec review --base ...` |
 | Sub-agent CLI call fails (permissions) | Retry from main context with `run_in_background`; do not abort |
+| Gemini extension command fails | Wrapper auto-falls back to rich pipe mode with stderr warning |
+| `origin/HEAD` differs from PR base | Wrapper logs warning; extension diffs against `origin/HEAD` |
 | CLI returns no findings | Report "no findings" for that engine; skip fix phase |
 | User says "full codebase" | Skip context detection; use full codebase mode |
 | All findings are hallucinations | WONTFIX each with explanation; no code changes made |

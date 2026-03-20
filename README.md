@@ -304,10 +304,17 @@ actual diff into `codex exec -` with a constrained review prompt. This keeps
 Codex focused on the patch instead of the whole repository and avoids the
 current `exec review --base ...` prompt-steering limitation.
 
+For Gemini diff reviews, the skill prefers Google's official
+[code-review extension](https://github.com/gemini-cli-extensions/code-review)
+when installed — this runs Gemini in interactive mode with full-file access,
+significantly reducing false positives. Falls back to rich pipe mode (prompt +
+full changed files + diff) otherwise.
+
 Source:
 - `skills/cli-review-fix/SKILL.md`
 - `skills/cli-review-fix/scripts/cli-review-detect.sh`
 - `skills/cli-review-fix/scripts/cli-review-codex.sh`
+- `skills/cli-review-fix/scripts/cli-review-gemini.sh`
 - `skills/cli-review-fix/references/codex-review-prompt.md`
 - `skills/cli-review-fix/references/cli-commands.md`
 - `skills/cli-review-fix/references/review-prompt.md`
